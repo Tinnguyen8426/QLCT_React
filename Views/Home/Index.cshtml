@@ -1,0 +1,45 @@
+﻿@model StorefrontViewModel
+@{
+    ViewData["Title"] = "Trang chủ";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="hero position-relative overflow-hidden" style="padding: 80px 0;">
+    <div style="position:absolute; inset:0; background:linear-gradient(120deg,rgba(15,15,21,.6),rgba(15,15,21,.3)),url('https://file.hstatic.net/200000362771/article/barber-tony-barber-house_f437cb3b08244de3873cc9854cf68dee.jpg') center/cover;"></div>
+    <div class="container hero-inner position-relative text-white">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 px-3 px-md-0 mx-auto text-center text-lg-start" style="backdrop-filter: blur(8px); background-color: rgba(17,17,25,0.45); border-radius: 16px; padding: 48px;">
+                <div class="px-2 px-md-4 px-lg-5">
+                    <h1 style="font-size:48px; line-height:1.1; margin:0 0 16px;">Nâng tầm phong cách – Tạo nên sự khác biệt.</h1>
+                    <p style="font-size:18px; color:rgba(255,255,255,.92); margin: 0 0 12px;">Tiệm cắt tóc chuyên nghiệp với đội ngũ thợ lành nghề, dụng cụ hiện đại và không gian tinh gọn. Chúng tôi chú trọng trải nghiệm và phong cách riêng của bạn.</p>
+                    <p style="font-size:18px; color:rgba(255,255,255,.92); margin: 0 0 24px;">Đặt lịch nhanh chóng, minh bạch giá và thời lượng từng dịch vụ. Hình ảnh thực tế, không phô trương.</p>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a class="btn btn-light text-dark px-4" href="/Booking">Đặt lịch ngay</a>
+                        <a class="btn btn-outline-light px-4" href="/Services">Xem bảng giá</a>
+                        <a class="btn btn-outline-light px-4" href="/Contact">Liên hệ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 position-relative overflow-hidden">
+    <div style="position:absolute; inset:0; background:linear-gradient(140deg,rgba(14,14,22,.85),rgba(14,14,22,.6)),url('https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=1600&q=80') center/cover;"></div>
+    <div class="container position-relative" style="padding: 40px 0;">
+        <div class="card-grid" style="gap:24px;">
+            <div class="feature" style="background-color: rgba(10,10,16,0.68); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 28px; backdrop-filter: blur(10px);">
+                <h3 style="margin:0 0 8px; color:#fafaff;">Phong cách tối giản</h3>
+                <p style="margin:0; color:rgba(255,255,255,0.88);">Không gian gọn gàng, tập trung vào chất lượng cắt tỉa và sự thoải mái.</p>
+            </div>
+            <div class="feature" style="background-color: rgba(10,10,16,0.68); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 28px; backdrop-filter: blur(10px);">
+                <h3 style="margin:0 0 8px; color:#fafaff;">Thời gian minh bạch</h3>
+                <p style="margin:0; color:rgba(255,255,255,0.88);">Mỗi dịch vụ đều hiển thị rõ thời lượng và giá để bạn chủ động sắp xếp.</p>
+            </div>
+            <div class="feature" style="background-color: rgba(10,10,16,0.68); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 28px; backdrop-filter: blur(10px);">
+                <h3 style="margin:0 0 8px; color:#fafaff;">Đặt lịch nhanh</h3>
+                <p style="margin:0; color:rgba(255,255,255,0.88);">Chọn dịch vụ, nhân viên, thời gian chỉ trong vài thao tác.</p>
+            </div>
+        </div>
+    </div>
+</section>

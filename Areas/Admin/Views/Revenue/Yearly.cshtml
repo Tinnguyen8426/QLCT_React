@@ -1,0 +1,184 @@
+@{
+    ViewData["Title"] = "Thống kê doanh thu theo năm";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Thống kê doanh thu theo năm</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/Revenue">Thống kê doanh thu</a></li>
+                    <li class="breadcrumb-item active">Theo năm</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Main row -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo năm (5 năm gần nhất)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="yearlyRevenueChart" style="min-height: 300px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Chi tiết doanh thu theo năm</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Năm</th>
+                                    <th>Doanh thu</th>
+                                    <th>So với năm trước</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < ViewBag.YearlyRevenueData.Count; i++)
+                                {
+                                    var item = ViewBag.YearlyRevenueData[i];
+                                    <tr>
+                                        <td>@item.Year</td>
+                                        <td>@item.Revenue.ToString("N0") VNĐ</td>
+                                        <td>
+                                            @if (i < ViewBag.YearlyRevenueData.Count - 1)
+                                            {
+                                                var prevYear = ViewBag.YearlyRevenueData[i + 1];
+                                                if (prevYear.Revenue > 0)
+                                                {
+                                                    var change = (item.Revenue - prevYear.Revenue) / prevYear.Revenue * 100;
+                                                    var changeIcon = change >= 0 ? "up" : "down";
+                                                    var changeClass = change >= 0 ? "text-success" : "text-danger";
+                                                    <span class="@changeClass">
+                                                        <i class="fas fa-arrow-@changeIcon"></i> @Math.Abs(change).ToString("N1")%
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-success">
+                                                        <i class="fas fa-arrow-up"></i> 100%
+                                                    </span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo thời gian</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue" class="nav-link">
+                                    <i class="fas fa-calendar-day mr-2"></i> Theo ngày (30 ngày)
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Monthly" class="nav-link">
+                                    <i class="fas fa-calendar-alt mr-2"></i> Theo tháng
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Yearly" class="nav-link active">
+                                    <i class="fas fa-calendar mr-2"></i> Theo năm
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /.content -->
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo năm
+        var yearlyLabels = [];
+        var yearlyData = [];
+        
+        @foreach (var item in ViewBag.YearlyRevenueData)
+        {
+            @:yearlyLabels.push('@item.Year');
+            @:yearlyData.push(@item.Revenue);
+        }
+        
+        // Đảo ngược mảng để hiển thị theo thứ tự tăng dần
+        yearlyLabels.reverse();
+        yearlyData.reverse();
+        
+        // Khởi tạo biểu đồ doanh thu theo năm
+        var yearlyCtx = document.getElementById('yearlyRevenueChart').getContext('2d');
+        var yearlyChart = new Chart(yearlyCtx, {
+            type: 'bar',
+            data: {
+                labels: yearlyLabels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: yearlyData,
+                    backgroundColor: 'rgba(60, 141, 188, 0.7)',
+                    borderColor: 'rgba(60, 141, 188, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('vi-VN').format(context.raw) + ' đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

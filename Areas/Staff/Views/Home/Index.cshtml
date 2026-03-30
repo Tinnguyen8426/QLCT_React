@@ -1,0 +1,199 @@
+@model StaffDashboardViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển nhân viên";
+    var statusTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+    Func<string?, string> getStatusBadge = status =>
+        status?.ToLowerInvariant() switch
+        {
+            "completed" => "badge bg-success",
+            "confirmed" => "badge bg-info text-dark",
+            "cancelled" => "badge bg-danger",
+            "no-show" => "badge bg-warning text-dark",
+            _ => "badge bg-secondary"
+        };
+    Func<QuanLyTiemCatToc.Models.Appointment, string> getServices = appointment =>
+    {
+        var names = appointment.AppointmentDetails?
+            .Where(d => d.Service != null)
+            .Select(d => d.Service!.ServiceName)
+            .ToList() ?? new List<string>();
+        return names.Any() ? string.Join(", ", names) : "Đang cập nhật";
+    };
+}
+
+<div class="staff-hero rounded-4 p-4 p-lg-5 mb-4 position-relative overflow-hidden">
+    <div class="hero-content">
+        <p class="text-uppercase small text-white-50 mb-1">Xin chào @User.Identity?.Name</p>
+        <h1 class="display-6 fw-semibold text-white mb-3">Sẵn sàng cho một ngày hiệu quả?</h1>
+        <p class="text-white-75 mb-4">Theo dõi lịch đã giao, cập nhật trạng thái phục vụ và nắm bắt nhu cầu khách hàng ngay tại đây.</p>
+        <div class="d-flex flex-wrap gap-3">
+            <a class="btn btn-warning text-dark fw-semibold px-4" asp-area="Staff" asp-controller="Appointments" asp-action="Index" asp-route-date='@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")'>
+                <i class="fas fa-calendar-day me-2"></i>Lịch hôm nay
+            </a>
+            <a class="btn btn-outline-light px-4" href="/Booking">
+                <i class="fas fa-magic me-2"></i>Đặt lịch giúp khách
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="metric-card gradient-primary text-white">
+            <p class="text-uppercase small text-white-75 mb-1">Lịch hôm nay</p>
+            <h2 class="display-6 text-white mb-0">@Model.TotalToday</h2>
+            <span class="text-white-75 small">Tổng số lượt cần xử lý</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="metric-card gradient-info text-white">
+            <p class="text-uppercase small text-white-75 mb-1">Đã xác nhận</p>
+            <h2 class="display-6 text-white mb-0">@Model.ConfirmedToday</h2>
+            <span class="text-white-75 small">Sẵn sàng phục vụ</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="metric-card gradient-success text-white">
+            <p class="text-uppercase small text-white-75 mb-1">Hoàn thành</p>
+            <h2 class="display-6 text-white mb-0">@Model.CompletedToday</h2>
+            <span class="text-white-75 small">Đã chăm sóc xong</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="metric-card gradient-warning">
+            <p class="text-uppercase small text-dark-50 mb-1">Chờ xử lý</p>
+            <h2 class="display-6 text-dark mb-0">@Model.PendingToday</h2>
+            <span class="text-dark small">Ưu tiên cập nhật trạng thái</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-dark-80">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h2 class="h5 text-white mb-1">Lịch tiếp theo</h2>
+                        <p class="text-white-50 mb-0">Xem nhanh và chuẩn bị trước khi khách tới.</p>
+                    </div>
+                    <a class="btn btn-outline-light btn-sm" asp-area="Staff" asp-controller="Appointments" asp-action="Index">Xem toàn bộ</a>
+                </div>
+                @if (Model.NextAppointment != null)
+                {
+                    var next = Model.NextAppointment;
+                    <div class="next-appointment rounded-4 p-4 mb-4">
+                        <div class="d-flex align-items-start justify-content-between gap-3">
+                            <div>
+                                <p class="text-uppercase small text-white-50 mb-1">@next.AppointmentDate.ToString("dddd, dd/MM")</p>
+                                <h3 class="h4 text-white mb-1">@next.Customer?.FullName</h3>
+                                <p class="text-white-50 mb-3">@getServices(next)</p>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <span class="@getStatusBadge(next.Status)">@(
+                                        statusTranslations.TryGetValue(next.Status ?? "Pending", out var label) ? label : next.Status ?? "Chờ xử lý")</span>
+                                    <span class="text-white-50"><i class="fas fa-clock me-2"></i>@next.AppointmentTime.ToString("HH:mm")</span>
+                                    <span class="text-white-50"><i class="fas fa-phone me-2"></i>@next.Customer?.Phone</span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <a class="btn btn-sm btn-success" href="tel:@next.Customer?.Phone"><i class="fas fa-phone-alt me-2"></i>Gọi khách</a>
+                                <a class="btn btn-sm btn-outline-light" asp-area="Staff" asp-controller="Appointments" asp-action="Index" asp-route-searchTerm="@next.Customer?.FullName">
+                                    <i class="fas fa-search me-2"></i>Tìm lịch
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-white-50 py-5">
+                        <i class="fas fa-mug-hot fa-2x mb-3 text-white-25"></i>
+                        <p class="mb-0">Hiện chưa có lịch nào trong thời gian tới.</p>
+                    </div>
+                }
+                <h3 class="h6 text-uppercase text-white-50 mb-3">Sắp diễn ra</h3>
+                <div class="timeline">
+                    @if (!Model.UpcomingAppointments.Any())
+                    {
+                        <div class="timeline-item empty">
+                            <p class="mb-0 text-white-50">Không có thêm lịch hẹn nào.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        foreach (var appointment in Model.UpcomingAppointments)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-point"></div>
+                                <div>
+                                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <p class="text-white-50 small mb-0">@appointment.AppointmentDate.ToString("dd/MM") • @appointment.AppointmentTime.ToString("HH:mm")</p>
+                                            <h4 class="h6 text-white mb-1">@appointment.Customer?.FullName</h4>
+                                        </div>
+                                        <span class="@getStatusBadge(appointment.Status)">@(
+                                            statusTranslations.TryGetValue(appointment.Status ?? "Pending", out var label) ? label : appointment.Status ?? "Chờ xử lý")</span>
+                                    </div>
+                                    <p class="text-white-50 mb-0">@getServices(appointment)</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-surface">
+            <div class="card-body p-4">
+                <h2 class="h5 text-white mb-1">Hoạt động gần nhất</h2>
+                <p class="text-white-50 mb-4">Theo dõi những lịch hẹn vừa hoàn thành.</p>
+                <div class="activity-list">
+                    @if (!Model.RecentCompletedAppointments.Any())
+                    {
+                        <div class="text-white-50 text-center py-5">
+                            <i class="fas fa-check-circle mb-3 d-block fa-2x text-success"></i>
+                            <p class="mb-0">Chưa có lịch hoàn thành nào gần đây.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        foreach (var appointment in Model.RecentCompletedAppointments)
+                        {
+                            <div class="activity-item d-flex align-items-start mb-4">
+                                <div class="activity-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div>
+                                    <h3 class="h6 text-white mb-1">@appointment.Customer?.FullName</h3>
+                                    <p class="text-white-50 mb-1">@appointment.AppointmentDate.ToString("dd/MM/yyyy") • @appointment.AppointmentTime.ToString("HH:mm")</p>
+                                    <p class="text-white-50 mb-0">@getServices(appointment)</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="status-ratio mt-4">
+                    <h3 class="h6 text-white mb-3">Trạng thái hôm nay</h3>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var kv in Model.StatusCounts)
+                        {
+                            <div class="status-pill">
+                                <span class="text-white-50 text-uppercase small">@(
+                                    statusTranslations.TryGetValue(kv.Key, out var label) ? label : kv.Key)</span>
+                                <strong class="text-white fs-5">@kv.Value</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

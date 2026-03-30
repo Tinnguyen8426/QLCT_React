@@ -1,0 +1,164 @@
+@{
+    ViewData["Title"] = "Thống kê doanh thu theo danh mục";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Thống kê doanh thu theo danh mục</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/Revenue">Thống kê doanh thu</a></li>
+                    <li class="breadcrumb-item active">Theo danh mục</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Main row -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Biểu đồ doanh thu theo danh mục</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="categoryPieChart" style="min-height: 300px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Chi tiết doanh thu theo danh mục</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Danh mục</th>
+                                    <th>Doanh thu</th>
+                                    <th>Tỷ lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    decimal totalRevenue = ViewBag.TotalRevenue > 0 ? ViewBag.TotalRevenue : 1;
+                                    var categoryColors = new string[] {
+                                        "#4e73df", "#1cc88a", "#36b9cc", "#f6c23e", "#e74a3b", "#5a5c69", "#858796"
+                                    };
+                                    int colorIndex = 0;
+                                }
+                                @foreach (var item in ViewBag.CategoryRevenue)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-square" style="color: @categoryColors[colorIndex % categoryColors.Length]"></i>
+                                            @item.CategoryName
+                                        </td>
+                                        <td>@item.Revenue.ToString("N0") VNĐ</td>
+                                        <td>
+                                            <div class="progress progress-xs">
+                                                <div class="progress-bar" style="width: @((item.Revenue / totalRevenue * 100).ToString("0"))%; background-color: @categoryColors[colorIndex % categoryColors.Length]"></div>
+                                            </div>
+                                            <span class="badge bg-primary">@((item.Revenue / totalRevenue * 100).ToString("0.0"))%</span>
+                                        </td>
+                                    </tr>
+                                    colorIndex++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Các báo cáo khác</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue" class="nav-link">
+                                    <i class="fas fa-tachometer-alt mr-2"></i> Tổng quan
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Products" class="nav-link">
+                                    <i class="fas fa-box mr-2"></i> Theo sản phẩm
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /.content -->
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo danh mục
+        var categoryLabels = [];
+        var categoryData = [];
+        var categoryColors = [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#5a5c69', '#858796'
+        ];
+        
+        @foreach (var item in ViewBag.CategoryRevenue)
+        {
+            @:categoryLabels.push('@item.CategoryName');
+            @:categoryData.push(@item.Revenue);
+        }
+        
+        // Khởi tạo biểu đồ doanh thu theo danh mục
+        var categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+        var categoryChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: categoryColors.slice(0, categoryLabels.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.label || '';
+                                var value = context.raw;
+                                var total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                var percentage = Math.round((value / total) * 100);
+                                return label + ': ' + new Intl.NumberFormat('vi-VN').format(value) + ' đ (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
