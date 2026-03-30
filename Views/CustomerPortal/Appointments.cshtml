@@ -1,0 +1,89 @@
+@using System.Collections.Generic
+@using System.Linq
+@model QuanLyTiemCatToc.Models.ViewModels.CustomerAppointmentsViewModel
+@{
+    ViewData["Title"] = "Lịch hẹn của tôi";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<section class="pb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-semibold mb-1">Lịch hẹn của tôi</h1>
+            <p class="text-white-50 mb-0">Theo dõi và chủ động quản lý các cuộc hẹn tại tiệm.</p>
+        </div>
+        <a class="btn btn-light" asp-controller="Booking" asp-action="Index">Đặt lịch mới</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    @if (Model.Customer == null)
+    {
+        <div class="alert alert-warning">Chúng tôi chưa xác định được hồ sơ khách hàng của bạn. Vui lòng cập nhật số điện thoại tại mục <a class="text-decoration-underline" asp-controller="Profile" asp-action="Index">Hồ sơ cá nhân</a>.</div>
+    }
+    else if (!Model.Appointments.Any())
+    {
+        <div class="border border-secondary-subtle rounded-4 p-5 text-center text-white-50">
+            Bạn chưa có lịch hẹn nào. Hãy đặt lịch để trải nghiệm dịch vụ tốt nhất!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive rounded-4 border border-secondary-subtle">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Dịch vụ</th>
+                        <th>Nhân viên</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var apt in Model.Appointments)
+                    {
+                        var services = string.Join(", ", apt.AppointmentDetails.Where(d => d.Service != null).Select(d => d.Service!.ServiceName));
+                        var statusKey = string.IsNullOrWhiteSpace(apt.Status) ? "Pending" : apt.Status;
+                        var statusLabel = statusTranslations.TryGetValue(statusKey, out var label) ? label : statusKey;
+                        var canCancel = apt.Status != "Completed" && apt.Status != "Cancelled";
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@apt.AppointmentDate.ToString("dd/MM/yyyy")</div>
+                                <div class="text-white-50 small">@apt.AppointmentTime.ToString("HH:mm")</div>
+                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(services) ? "Đang cập nhật" : services)</td>
+                            <td>@(apt.Staff?.FullName ?? "Chưa phân công")</td>
+                            <td><span class="badge text-bg-light text-dark">@statusLabel</span></td>
+                            <td class="text-end">
+                                @if (canCancel)
+                                {
+                                    <form asp-action="CancelAppointment" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@apt.AppointmentId" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Bạn chắc chắn muốn hủy lịch hẹn này?');">Hủy lịch</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
