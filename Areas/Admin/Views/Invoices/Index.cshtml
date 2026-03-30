@@ -1,0 +1,127 @@
+@model X.PagedList.IPagedList<QuanLyTiemCatToc.Models.Invoice>
+@using X.PagedList.Mvc.Core;
+@{
+    ViewData["Title"] = "Quản lý hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var paymentTranslations = new Dictionary<string, string>
+    {
+        ["Cash"] = "Tiền mặt",
+        ["Card"] = "Thẻ",
+        ["Transfer"] = "Chuyển khoản"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Quản lý hóa đơn</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Danh sách hóa đơn - Tổng: @string.Format("{0:N0} đ", ViewBag.TotalRevenue)</h3>
+                <div class="card-tools">
+                    <a href="@Url.Action("Create")" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Tạo hóa đơn
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control" placeholder="Từ ngày" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control" placeholder="Đến ngày" />
+                        </div>
+                        <div class="col-md-3">
+                            <select name="paymentMethod" class="form-control">
+                                <option value="">-- Phương thức --</option>
+                                <option value="Cash" selected="@(ViewBag.SelectedPaymentMethod == "Cash")">Tiền mặt</option>
+                                <option value="Card" selected="@(ViewBag.SelectedPaymentMethod == "Card")">Thẻ</option>
+                                <option value="Transfer" selected="@(ViewBag.SelectedPaymentMethod == "Transfer")">Chuyển khoản</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary">Lọc</button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">Xóa</a>
+                        </div>
+                    </div>
+                </form>
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Khách hàng</th>
+                                <th>Nhân viên</th>
+                                <th>Ngày tạo</th>
+                                <th>Tổng tiền</th>
+                                <th>Giảm giá</th>
+                                <th>Thanh toán</th>
+                                <th>Phương thức</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.InvoiceId</td>
+                                    <td>@(item.Customer?.FullName ?? "-")</td>
+                                    <td>@(item.Staff?.FullName ?? "-")</td>
+                                    <td>@item.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@string.Format("{0:N0} đ", item.Total)</td>
+                                    <td>@string.Format("{0:N0} đ", item.Discount)</td>
+                                    <td><strong>@string.Format("{0:N0} đ", item.FinalAmount)</strong></td>
+                                    @{
+                                        var paymentKey = string.IsNullOrWhiteSpace(item.PaymentMethod) ? string.Empty : item.PaymentMethod;
+                                        var paymentLabel = string.IsNullOrEmpty(paymentKey) ? "-" : paymentTranslations.TryGetValue(paymentKey, out string label) ? label : paymentKey;
+                                    }
+                                    <td>@paymentLabel</td>
+                                    <td>
+                                        <a href="@Url.Action("Details", new { id = item.InvoiceId })" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Print", new { id = item.InvoiceId })" class="btn btn-secondary btn-sm" target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        <button onclick="deleteInvoice(@item.InvoiceId)" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer clearfix">
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function deleteInvoice(id) {
+            if (confirm('Xóa hóa đơn này?')) {
+                fetch('/Admin/Invoices/Delete/' + id, { method: 'POST' })
+                    .then(response => { if (response.ok) location.reload(); });
+            }
+        }
+    </script>
+}
