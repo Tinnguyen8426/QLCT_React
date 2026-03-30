@@ -1,0 +1,221 @@
+@model QuanLyTiemCatToc.Models.Invoice
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Tạo hóa đơn";
+    var services = ViewData["Services"] as List<QuanLyTiemCatToc.Models.Service> ?? new();
+    var products = ViewData["Products"] as List<QuanLyTiemCatToc.Models.Product> ?? new();
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Tạo hóa đơn</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                <a class="btn btn-secondary" href="@Url.Action("Index")"><i class="fas fa-arrow-left"></i> Quay lại</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Khách hàng</label>
+                            <select class="form-control" asp-for="CustomerId" asp-items="ViewBag.CustomerId"></select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nhân viên</label>
+                            <select class="form-control" asp-for="StaffId" asp-items="ViewBag.StaffId"></select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Phương thức thanh toán</label>
+                            <select class="form-control" asp-for="PaymentMethod">
+                                <option value="Cash">Tiền mặt</option>
+                                <option value="Card">Thẻ</option>
+                                <option value="Transfer">Chuyển khoản</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-3">Dịch vụ & Sản phẩm</h5>
+                    <table class="table table-bordered" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width:10%">Loại</th>
+                                <th style="width:35%">Tên</th>
+                                <th style="width:15%">Số lượng</th>
+                                <th style="width:20%">Đơn giá</th>
+                                <th style="width:20%">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <select class="form-control item-type-select">
+                                        <option value="">-- Chọn loại --</option>
+                                        <option value="Service">Dịch vụ</option>
+                                        <option value="Product">Sản phẩm</option>
+                                    </select>
+                                    <input type="hidden" name="itemTypes" />
+                                </td>
+                                <td>
+                                    <select class="form-control item-select" disabled>
+                                        <option value="">-- Chọn loại trước --</option>
+                                    </select>
+                                    <input type="hidden" name="serviceIds" />
+                                    <input type="hidden" name="productIds" />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control qty-input" name="quantities" value="1" min="1" />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control price-input" name="unitPrices" value="0" step="1000" />
+                                </td>
+                                <td class="line-total">0</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="addRow"><i class="fas fa-plus"></i> Thêm dòng</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Tổng</label>
+                            <input class="form-control" asp-for="Total" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Giảm giá</label>
+                            <input class="form-control" asp-for="Discount" value="0" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Thành tiền</label>
+                            <input class="form-control" asp-for="FinalAmount" readonly />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Lưu hóa đơn</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        var services = @Html.Raw(Json.Serialize(services.Select(s => new { s.ServiceId, s.ServiceName, s.Price })));
+        var products = @Html.Raw(Json.Serialize(products.Select(p => new { p.ProductId, p.ProductName, p.Price, p.StockQuantity })));
+
+        function recalcRow(row) {
+            var qty = parseFloat(row.querySelector('.qty-input').value || '0');
+            var price = parseFloat(row.querySelector('.price-input').value || '0');
+            var total = qty * price;
+            row.querySelector('.line-total').innerText = total.toLocaleString('vi-VN');
+            return total;
+        }
+
+        function recalcTotal() {
+            var rows = document.querySelectorAll('#itemsTable tbody tr');
+            var total = 0;
+            rows.forEach(function (r) { total += recalcRow(r); });
+            var totalInput = document.querySelector('input[name="Total"]');
+            var discountInput = document.querySelector('input[name="Discount"]');
+            var finalInput = document.querySelector('input[name="FinalAmount"]');
+            var discount = parseFloat(discountInput.value || '0');
+            totalInput.value = total.toFixed(0);
+            finalInput.value = Math.max(total - discount, 0).toFixed(0);
+        }
+
+        function updateItemSelect(row, itemType) {
+            var itemSelect = row.querySelector('.item-select');
+            var itemTypeInput = row.querySelector('input[name="itemTypes"]');
+            var serviceIdInput = row.querySelector('input[name="serviceIds"]');
+            var productIdInput = row.querySelector('input[name="productIds"]');
+            
+            itemSelect.innerHTML = '<option value="">-- Chọn --</option>';
+            itemSelect.disabled = !itemType;
+            itemTypeInput.value = itemType || '';
+            serviceIdInput.value = '';
+            productIdInput.value = '';
+            row.querySelector('.price-input').value = '0';
+            
+            if (itemType === 'Service') {
+                services.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.serviceId;
+                    opt.textContent = s.serviceName;
+                    opt.setAttribute('data-price', s.price);
+                    itemSelect.appendChild(opt);
+                });
+            } else if (itemType === 'Product') {
+                products.forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.productId;
+                    opt.textContent = p.productName + ' (Tồn: ' + p.stockQuantity + ')';
+                    opt.setAttribute('data-price', p.price);
+                    opt.setAttribute('data-stock', p.stockQuantity);
+                    itemSelect.appendChild(opt);
+                });
+            }
+            
+            recalcTotal();
+        }
+
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('item-type-select')) {
+                var row = e.target.closest('tr');
+                updateItemSelect(row, e.target.value);
+            }
+            
+            if (e.target.classList.contains('item-select')) {
+                var opt = e.target.selectedOptions[0];
+                var price = opt ? (opt.getAttribute('data-price') || '0') : '0';
+                var row = e.target.closest('tr');
+                var itemType = row.querySelector('.item-type-select').value;
+                row.querySelector('.price-input').value = price;
+                
+                if (itemType === 'Service') {
+                    row.querySelector('input[name="serviceIds"]').value = e.target.value || '';
+                    row.querySelector('input[name="productIds"]').value = '';
+                } else if (itemType === 'Product') {
+                    row.querySelector('input[name="productIds"]').value = e.target.value || '';
+                    row.querySelector('input[name="serviceIds"]').value = '';
+                }
+                recalcTotal();
+            }
+            
+            if (e.target.classList.contains('qty-input') || e.target.name === 'Discount' || e.target.classList.contains('price-input')) {
+                recalcTotal();
+            }
+        });
+
+        document.getElementById('addRow').addEventListener('click', function () {
+            var tbody = document.querySelector('#itemsTable tbody');
+            var tr = tbody.querySelector('tr').cloneNode(true);
+            tr.querySelector('.item-type-select').selectedIndex = 0;
+            tr.querySelector('.item-select').innerHTML = '<option value="">-- Chọn loại trước --</option>';
+            tr.querySelector('.item-select').disabled = true;
+            tr.querySelector('.qty-input').value = 1;
+            tr.querySelector('.price-input').value = 0;
+            tr.querySelector('input[name="serviceIds"]').value = '';
+            tr.querySelector('input[name="productIds"]').value = '';
+            tr.querySelector('input[name="itemTypes"]').value = '';
+            tr.querySelector('.line-total').innerText = '0';
+            tbody.appendChild(tr);
+        });
+
+        recalcTotal();
+    })();
+</script>
+
+

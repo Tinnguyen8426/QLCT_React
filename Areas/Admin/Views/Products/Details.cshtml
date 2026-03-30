@@ -1,0 +1,146 @@
+@model QuanLyTiemCatToc.Models.Product
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Chi tiết sản phẩm mỹ phẩm";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Chi tiết sản phẩm mỹ phẩm</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                <a class="btn btn-secondary" href="@Url.Action("Index")"><i class="fas fa-arrow-left"></i> Quay lại</a>
+                <a class="btn btn-primary" href="@Url.Action("Edit", new { id = Model.ProductId })"><i class="fas fa-edit"></i> Sửa</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="@Model.ProductName" class="img-fluid rounded" />
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted p-5">
+                                <i class="fas fa-box fa-5x"></i>
+                                <p>Không có ảnh</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Tên sản phẩm</dt>
+                            <dd class="col-sm-8">@Model.ProductName</dd>
+
+                            <dt class="col-sm-4">Danh mục</dt>
+                            <dd class="col-sm-8">@(Model.Category ?? "Chưa phân loại")</dd>
+
+                            <dt class="col-sm-4">Thương hiệu</dt>
+                            <dd class="col-sm-8">@(Model.Brand ?? "Chưa có")</dd>
+
+                            <dt class="col-sm-4">Giá bán</dt>
+                            <dd class="col-sm-8"><strong class="text-success">@String.Format("{0:N0} đ", Model.Price)</strong></dd>
+
+                            <dt class="col-sm-4">Giá nhập</dt>
+                            <dd class="col-sm-8">@(Model.CostPrice.HasValue ? String.Format("{0:N0} đ", Model.CostPrice.Value) : "Chưa có")</dd>
+
+                            @if (Model.CostPrice.HasValue)
+                            {
+                                <dt class="col-sm-4">Lợi nhuận</dt>
+                                <dd class="col-sm-8"><strong class="text-primary">@String.Format("{0:N0} đ", Model.Price - Model.CostPrice.Value)</strong></dd>
+                            }
+
+                            <dt class="col-sm-4">Số lượng tồn kho</dt>
+                            <dd class="col-sm-8">
+                                @if (Model.StockQuantity > 0)
+                                {
+                                    <span class="badge badge-info">@Model.StockQuantity @(Model.Unit ?? "")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger">Hết hàng</span>
+                                }
+                            </dd>
+
+                            <dt class="col-sm-4">Đơn vị</dt>
+                            <dd class="col-sm-8">@(Model.Unit ?? "Chưa có")</dd>
+
+                            <dt class="col-sm-4">Trạng thái</dt>
+                            <dd class="col-sm-8">
+                                @if (Model.IsActive == true)
+                                {
+                                    <span class="badge badge-success">Đang bán</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Ngừng bán</span>
+                                }
+                            </dd>
+
+                            <dt class="col-sm-4">Mô tả</dt>
+                            <dd class="col-sm-8">@(Model.Description ?? "Chưa có mô tả")</dd>
+
+                            <dt class="col-sm-4">Ngày tạo</dt>
+                            <dd class="col-sm-8">@(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</dd>
+
+                            <dt class="col-sm-4">Ngày cập nhật</dt>
+                            <dd class="col-sm-8">@(Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Thống kê bán hàng</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info"><i class="fas fa-shopping-cart"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Tổng số lượng bán</span>
+                                        <span class="info-box-number">@ViewBag.TotalSales</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Tổng doanh thu</span>
+                                        <span class="info-box-number">@String.Format("{0:N0} đ", ViewBag.TotalRevenue)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning"><i class="fas fa-file-invoice"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Số hóa đơn</span>
+                                        <span class="info-box-number">@ViewBag.TotalInvoices</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

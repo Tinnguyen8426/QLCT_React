@@ -1,0 +1,209 @@
+@model QuanLyTiemCatToc.Models.ViewModels.ProductOrderListViewModel
+@using QuanLyTiemCatToc.Helpers
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+@{
+    ViewData["Title"] = "Đơn mỹ phẩm";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var statusOptions = (ViewBag.StatusOptions as IEnumerable<string> ?? ProductOrderStatusHelper.All).ToList();
+    var statusLabels = statusOptions.ToDictionary(s => s, ProductOrderStatusHelper.Translate, StringComparer.OrdinalIgnoreCase);
+    Func<string, string> badgeClass = status => ProductOrderStatusHelper.Normalize(status) switch
+    {
+        ProductOrderStatusHelper.Completed => "badge bg-success",
+        ProductOrderStatusHelper.Shipping => "badge bg-info text-dark",
+        ProductOrderStatusHelper.Packing => "badge bg-primary",
+        ProductOrderStatusHelper.Confirmed => "badge bg-primary",
+        ProductOrderStatusHelper.Cancelled => "badge bg-danger",
+        _ => "badge bg-warning text-dark"
+    };
+}
+
+<div class="content-header admin-dark-shell">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-white">Quản lý đơn mỹ phẩm</h1>
+                <p class="text-muted mb-0">Theo dõi, lọc và cập nhật trạng thái đơn hàng online.</p>
+            </div>
+            <div class="col-sm-6 text-sm-right mt-3 mt-sm-0">
+                <a href="/Store" class="btn btn-warning text-dark"><i class="fas fa-store me-1"></i> Xem cửa hàng</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content admin-dark-shell">
+    <div class="container-fluid">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="card admin-dark-card mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end filter-toolbar">
+                    <div class="col-md-4">
+                        <label class="form-label">Từ khóa</label>
+                        <input type="text" name="keyword" value="@Model.Keyword" class="form-control" placeholder="Mã đơn, tên khách, SĐT hoặc tên sản phẩm">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Trạng thái</label>
+                        <select name="status" class="form-select form-control status-filter">
+                            <option value="">Tất cả</option>
+                            @foreach (var option in statusOptions)
+                            {
+                                var normalized = ProductOrderStatusHelper.Normalize(option);
+                                <option value="@option" selected="@(string.Equals(normalized, Model.Status, StringComparison.OrdinalIgnoreCase))">
+                                    @statusLabels.GetValueOrDefault(option, option)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-warning text-dark w-100"><i class="fas fa-filter mr-1"></i> Lọc</button>
+                        <a class="btn btn-outline-light" asp-area="Admin" asp-controller="ProductOrders" asp-action="Index"><i class="fas fa-rotate-left"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="status-summary d-flex flex-wrap gap-3 mb-4">
+            @foreach (var kv in Model.StatusCounts)
+            {
+                var key = ProductOrderStatusHelper.Normalize(kv.Key);
+                <a class="status-chip @(string.Equals(key, Model.Status, StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                   asp-area="Admin" asp-controller="ProductOrders" asp-action="Index" asp-route-status="@key">
+                    <span>@statusLabels.GetValueOrDefault(key, key)</span>
+                    <strong>@kv.Value</strong>
+                </a>
+            }
+        </div>
+
+        <div class="card admin-dark-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">Đơn hàng</h3>
+                <span class="text-muted">Trang @Model.Orders.PageNumber / @Model.Orders.PageCount</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark-custom table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Khách</th>
+                                <th>Sản phẩm</th>
+                                <th>Địa chỉ</th>
+                                <th>Tổng</th>
+                                <th>Ngày tạo</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Orders.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">Không tìm thấy đơn hàng phù hợp.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var order in Model.Orders)
+                                {
+                                    var status = ProductOrderStatusHelper.Normalize(order.FulfillmentStatus);
+                                    var label = statusLabels.GetValueOrDefault(status, status);
+                                    var itemNames = order.InvoiceDetails
+                                        .Where(d => d.Product != null)
+                                        .Select(d => d.Product!.ProductName)
+                                        .Distinct()
+                                        .ToList();
+                                    var total = order.FinalAmount ?? order.Total;
+                                    <tr>
+                                        <td class="fw-semibold">#@order.InvoiceId</td>
+                                        <td>
+                                            <div class="fw-semibold">@order.Customer?.FullName</div>
+                                            <div class="text-muted small">@order.Customer?.Phone</div>
+                                        </td>
+                                        <td>
+                                            <div class="text-white-75">
+                                                @(itemNames.Any() ? string.Join(", ", itemNames) : "Đang cập nhật")
+                                            </div>
+                                            <div class="text-muted small">Số lượng: @order.InvoiceDetails.Sum(d => d.Quantity ?? 0)</div>
+                                        </td>
+                                        <td>
+                                            <span class="text-white-75">@(!string.IsNullOrWhiteSpace(order.ShippingAddress) ? order.ShippingAddress : "Chưa cập nhật")</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-warning">@string.Format("{0:N0} đ", total)</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">@order.CreatedAt?.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-muted small">@order.CreatedAt?.ToString("HH:mm")</div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="@badgeClass(status)">@label</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex flex-column flex-lg-row justify-content-end gap-2">
+                                                <form asp-area="Admin" asp-controller="ProductOrders" asp-action="UpdateStatus" method="post" class="d-flex gap-2 flex-wrap justify-content-end">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@order.InvoiceId" />
+                                                    <input type="hidden" name="returnStatus" value="@Model.Status" />
+                                                    <input type="hidden" name="returnKeyword" value="@Model.Keyword" />
+                                                    <input type="hidden" name="returnFrom" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+                                                    <input type="hidden" name="returnTo" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+                                                    <input type="hidden" name="page" value="@Model.Orders.PageNumber" />
+                                                    <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                                        @foreach (var option in statusOptions)
+                                                        {
+                                                            var normalized = ProductOrderStatusHelper.Normalize(option);
+                                                            <option value="@option" selected="@(string.Equals(normalized, status, StringComparison.OrdinalIgnoreCase))">@statusLabels.GetValueOrDefault(option, option)</option>
+                                                        }
+                                                    </select>
+                                                    <button class="btn btn-sm btn-outline-light" type="submit">Cập nhật</button>
+                                                </form>
+                                                <a class="btn btn-sm btn-outline-info" asp-area="Admin" asp-controller="Invoices" asp-action="Details" asp-route-id="@order.InvoiceId" target="_blank">
+                                                    <i class="fas fa-file-invoice"></i> Hóa đơn
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                @Html.PagedListPager(
+                    Model.Orders,
+                    page => Url.Action("Index", new
+                    {
+                        page,
+                        status = Model.Status,
+                        keyword = Model.Keyword,
+                        fromDate = Model.FromDate?.ToString("yyyy-MM-dd"),
+                        toDate = Model.ToDate?.ToString("yyyy-MM-dd")
+                    }))
+            </div>
+        </div>
+    </div>
+</section>
