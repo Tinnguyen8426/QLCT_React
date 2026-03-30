@@ -1,0 +1,156 @@
+@using System.Collections.Generic
+@model QuanLyTiemCatToc.Models.Appointment
+@using System.Linq
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Chi tiết lịch hẹn";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Chi tiết lịch hẹn</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                <a class="btn btn-secondary" href="@Url.Action("Index")"><i class="fas fa-arrow-left"></i> Quay lại</a>
+                <a class="btn btn-primary" href="@Url.Action("Edit", new { id = Model.AppointmentId })"><i class="fas fa-edit"></i> Sửa</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Khách hàng</dt>
+                    <dd class="col-sm-9">@Model.Customer?.FullName ?? "Khách vãng lai"</dd>
+
+                    <dt class="col-sm-3">Dịch vụ</dt>
+                    @{
+                        var serviceItems = Model.AppointmentDetails?
+                            .Where(d => d.Service != null)
+                            .Select(d => d.Service!)
+                            .Distinct()
+                            .ToList() ?? new List<QuanLyTiemCatToc.Models.Service>();
+                        var serviceTexts = serviceItems.Any()
+                            ? string.Join(", ", serviceItems.Select(s => s.ServiceName))
+                            : "Đang cập nhật";
+                    }
+                    <dd class="col-sm-9">@serviceTexts</dd>
+
+                    <dt class="col-sm-3">Nhân viên</dt>
+                    <dd class="col-sm-9">@Model.Staff?.FullName</dd>
+
+                    <dt class="col-sm-3">Ngày</dt>
+                    <dd class="col-sm-9">@Model.AppointmentDate.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-3">Giờ</dt>
+                    <dd class="col-sm-9">@Model.AppointmentTime.ToString("HH:mm")</dd>
+
+                    <dt class="col-sm-3">Trạng thái</dt>
+                    @{
+                        var statusKey = string.IsNullOrWhiteSpace(Model.Status) ? "Pending" : Model.Status;
+                        var statusLabel = statusTranslations.TryGetValue(statusKey, out string label) ? label : statusKey;
+                    }
+                    <dd class="col-sm-9">@statusLabel</dd>
+
+                    <dt class="col-sm-3">Ghi chú</dt>
+                    <dd class="col-sm-9">@Model.Note</dd>
+                </dl>
+            </div>
+            @if (serviceItems.Any())
+            {
+                <div class="card-footer">
+                    <h5 class="mb-3">Chi tiết dịch vụ</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tên dịch vụ</th>
+                                    <th>Giá</th>
+                                    <th>Thời lượng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detail in Model.AppointmentDetails.Where(d => d.Service != null))
+                                {
+                                    <tr>
+                                        <td>@detail.Service!.ServiceName</td>
+                                        <td>@String.Format("{0:N0} đ", detail.UnitPrice)</td>
+                                        <td>@(detail.Duration.HasValue ? detail.Duration + " phút" : "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="m-0">Hóa đơn lịch hẹn</h5>
+                <a class="btn btn-success" href="@Url.Action("Invoice", new { id = Model.AppointmentId })">
+                    <i class="fas fa-file-invoice"></i> @((Model.Invoices?.Any() ?? false) ? "Xem hóa đơn" : "Tạo hóa đơn")
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.Invoices != null && Model.Invoices.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Mã hóa đơn</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thu ngân</th>
+                                    <th>Thực thu</th>
+                                    <th>Phương thức</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in Model.Invoices.OrderByDescending(i => i.CreatedAt))
+                                {
+                                    <tr>
+                                        <td>#@invoice.InvoiceId</td>
+                                        <td>@invoice.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@invoice.Staff?.FullName ?? "Không xác định"</td>
+                                        <td>@String.Format("{0:N0} đ", invoice.FinalAmount ?? invoice.Total)</td>
+                                        <td>@invoice.PaymentMethod</td>
+                                        <td class="text-right">
+                                            <a class="btn btn-outline-secondary btn-sm" href="/Invoices/Details/@invoice.InvoiceId" target="_blank">
+                                                <i class="fas fa-eye"></i> Xem
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">Chưa phát hành hóa đơn cho lịch hẹn này.</div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+

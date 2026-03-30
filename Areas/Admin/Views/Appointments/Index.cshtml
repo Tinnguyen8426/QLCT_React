@@ -1,0 +1,154 @@
+@model X.PagedList.IPagedList<QuanLyTiemCatToc.Models.Appointment>
+@using X.PagedList.Mvc.Core;
+@using System.Linq
+@{
+    ViewData["Title"] = "Quản lý lịch hẹn";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Quản lý lịch hẹn</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Danh sách lịch hẹn</h3>
+                <div class="card-tools">
+                    <a href="@Url.Action("Calendar")" class="btn btn-info btn-sm mr-2">
+                        <i class="fas fa-calendar"></i> Xem lịch
+                    </a>
+                    <a href="@Url.Action("Create")" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Thêm lịch hẹn
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select name="status" class="form-control">
+                                <option value="">-- Tất cả trạng thái --</option>
+                                @foreach (var status in (ViewBag.Statuses as List<string>) ?? new List<string>())
+                                {
+                                    <option value="@status" selected="@(status == ViewBag.SelectedStatus)">
+                                        @(statusTranslations.ContainsKey(status) ? statusTranslations[status] : status)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control" placeholder="Từ ngày" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control" placeholder="Đến ngày" />
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">Xóa</a>
+                        </div>
+                    </div>
+                </form>
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Khách hàng</th>
+                                <th>Dịch vụ</th>
+                                <th>Nhân viên</th>
+                                <th>Ngày</th>
+                                <th>Giờ</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.AppointmentId</td>
+                                    <td>@item.Customer.FullName</td>
+                                    @{
+                                        var serviceNames = item.AppointmentDetails?
+                                            .Where(d => d.Service != null)
+                                            .Select(d => d.Service!.ServiceName)
+                                            .Distinct()
+                                            .ToList() ?? new List<string>();
+                                        var serviceDisplay = serviceNames.Any() ? string.Join(", ", serviceNames) : "-";
+                                        var hasInvoice = item.Invoices != null && item.Invoices.Any();
+                                    }
+                                    <td>@serviceDisplay</td>
+                                    <td>@(item.Staff?.FullName ?? "-")</td>
+                                    <td>@item.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.AppointmentTime.ToString("HH:mm")</td>
+                                    <td>
+                                        @{
+                                            var statusClass = item.Status switch
+                                            {
+                                                "Completed" => "badge-success",
+                                                "Confirmed" => "badge-primary",
+                                                "Cancelled" => "badge-danger",
+                                                _ => "badge-warning"
+                                            };
+                                            var statusKey = string.IsNullOrWhiteSpace(item.Status) ? "Pending" : item.Status;
+                                            var statusLabel = statusTranslations.TryGetValue(statusKey, out string translated) ? translated : statusKey;
+                                        }
+                                        <span class="badge @statusClass">@statusLabel</span>
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Edit", new { id = item.AppointmentId })" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="@Url.Action("Invoice", new { id = item.AppointmentId })"
+                                           class="btn @(hasInvoice ? "btn-info" : "btn-outline-info") btn-sm"
+                                           title="@(hasInvoice ? "Xem hóa đơn" : "Tạo hóa đơn")">
+                                            <i class="fas @(hasInvoice ? "fa-file-invoice-dollar" : "fa-file-invoice")"></i>
+                                        </a>
+                                        <button onclick="deleteAppointment(@item.AppointmentId)" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer clearfix">
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function deleteAppointment(id) {
+            if (confirm('Xóa lịch hẹn này?')) {
+                fetch('/Admin/Appointments/Delete/' + id, { method: 'POST' })
+                    .then(response => { if (response.ok) location.reload(); });
+            }
+        }
+    </script>
+}
