@@ -1,0 +1,121 @@
+@using QuanLyTiemCatToc.Helpers
+@using QuanLyTiemCatToc.Models.ViewModels
+@model OrderStatusViewModel
+@{
+    ViewData["Title"] = "Trạng thái đơn hàng";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+
+    var currentStatus = ProductOrderStatusHelper.Normalize(Model.FulfillmentStatus);
+    var isCancelled = currentStatus.Equals(ProductOrderStatusHelper.Cancelled, StringComparison.OrdinalIgnoreCase);
+    Func<string, string> badgeClass = status => status switch
+    {
+        ProductOrderStatusHelper.Completed => "badge bg-success",
+        ProductOrderStatusHelper.Shipping => "badge bg-info text-dark",
+        ProductOrderStatusHelper.Packing => "badge bg-primary",
+        ProductOrderStatusHelper.Confirmed => "badge bg-primary",
+        ProductOrderStatusHelper.Cancelled => "badge bg-danger",
+        _ => "badge bg-warning text-dark"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h1 class="fw-semibold mb-1">Đơn hàng #@Model.Invoice.InvoiceId</h1>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <small class="text-muted">Đặt lúc @Model.Invoice.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</small>
+            <span class="@badgeClass(currentStatus)">@ProductOrderStatusHelper.Translate(currentStatus)</span>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Store" class="btn btn-outline-light"><i class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm</a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card bg-dark border-secondary-subtle shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="card-title mb-0">Trạng thái hiện tại</h5>
+                    <span class="@badgeClass(currentStatus)">@ProductOrderStatusHelper.Translate(currentStatus)</span>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                    Chúng tôi chỉ hiển thị trạng thái mới nhất của đơn hàng để bạn theo dõi nhanh.
+                    @if (isCancelled)
+                    {
+                        <span class="text-danger fw-semibold">Đơn hàng đã bị hủy.</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary-subtle shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Sản phẩm</h5>
+                    <small class="text-muted">@Model.Invoice.InvoiceDetails.Count item(s)</small>
+                </div>
+                @if (!Model.Invoice.InvoiceDetails.Any())
+                {
+                    <div class="text-muted">Chưa có chi tiết sản phẩm.</div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var item in Model.Invoice.InvoiceDetails)
+                        {
+                            var name = item.Product?.ProductName ?? item.Service?.ServiceName ?? "Sản phẩm";
+                            <div class="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">@name</div>
+                                    <small class="text-muted">x @item.Quantity</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-semibold">@item.UnitPrice.ToString("N0") đ</div>
+                                    <small class="text-muted">Tạm tính: @((item.Subtotal?.ToString("N0") ?? "0") + " đ")</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card bg-dark border-secondary-subtle shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Thông tin đơn</h5>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Phương thức</span>
+                    <strong>@(Model.Invoice.PaymentMethod ?? "Chờ liên hệ")</strong>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Tổng tiền</span>
+                    <strong>@((Model.Invoice.FinalAmount ?? Model.Invoice.Total).ToString("N0")) đ</strong>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Số lượng</span>
+                    <strong>@Model.Invoice.InvoiceDetails.Sum(d => d.Quantity ?? 0)</strong>
+                </div>
+                <hr />
+                <div class="mb-2">
+                    <div class="text-muted small">Khách hàng</div>
+                    <div class="fw-semibold">@Model.ContactName</div>
+                    <div class="text-muted small">@Model.ContactPhone</div>
+                </div>
+                <div class="mb-2">
+                    <div class="text-muted small">Địa chỉ giao hàng</div>
+                    <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.ShippingAddress) ? Model.ShippingAddress : "Đang cập nhật")</div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0 small">
+                    Nhân viên sẽ liên hệ khi cần xác nhận thêm thông tin và cập nhật trạng thái.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
