@@ -1,0 +1,63 @@
+@model QuanLyTiemCatToc.Models.Service
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Chi tiết dịch vụ";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Chi tiết dịch vụ</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                <a class="btn btn-secondary" href="@Url.Action("Index")"><i class="fas fa-arrow-left"></i> Quay lại</a>
+                <a class="btn btn-primary" href="@Url.Action("Edit", new { id = Model.ServiceId })"><i class="fas fa-edit"></i> Sửa</a>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="@Model.ServiceName" class="img-fluid rounded" />
+                        }
+                        else
+                        {
+                            <div class="text-muted">Không có ảnh</div>
+                        }
+                    </div>
+                    <div class="col-md-8">
+                        <dl class="row">
+                            <dt class="col-sm-4">Tên dịch vụ</dt>
+                            <dd class="col-sm-8">@Model.ServiceName</dd>
+
+                            <dt class="col-sm-4">Danh mục</dt>
+                            <dd class="col-sm-8">@Model.Category</dd>
+
+                            <dt class="col-sm-4">Giá</dt>
+                            <dd class="col-sm-8">@String.Format("{0:N0} đ", Model.Price)</dd>
+
+                            <dt class="col-sm-4">Thời lượng</dt>
+                            <dd class="col-sm-8">@Model.Duration phút</dd>
+
+                            <dt class="col-sm-4">Trạng thái</dt>
+                            <dd class="col-sm-8">@(Model.IsActive == true ? "Đang bán" : "Ngừng bán")</dd>
+
+                            <dt class="col-sm-4">Mô tả</dt>
+                            <dd class="col-sm-8">@Model.Description</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

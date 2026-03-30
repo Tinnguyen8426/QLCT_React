@@ -1,0 +1,122 @@
+@model IEnumerable<QuanLyTiemCatToc.Models.Service>
+@{
+    ViewData["Title"] = "Dịch vụ";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+@{
+    var selectedCategory = ViewBag.SelectedCategory as string;
+    var services = Model?.ToList() ?? new List<QuanLyTiemCatToc.Models.Service>();
+    var groupedServices = string.IsNullOrEmpty(selectedCategory)
+        ? services
+            .GroupBy(s => string.IsNullOrWhiteSpace(s.Category) ? "Khác" : s.Category)
+            .OrderBy(g => g.Key)
+            .ToList()
+        : null;
+}
+
+<section class="py-5 position-relative">
+    <div class="container position-relative">
+        <div class="bg-black bg-opacity-50 border border-secondary-subtle rounded-4 p-4 p-md-5 text-white shadow-sm" style="backdrop-filter: blur(12px);">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-4">
+                <div>
+                    <h1 class="display-6 fw-semibold mb-2 text-white">Dịch vụ</h1>
+                    <p class="mb-0 text-white-50">Chọn gói chăm sóc phù hợp với phong cách của bạn.</p>
+                </div>
+                <form method="get" class="d-flex flex-wrap gap-3">
+                    <select name="category" class="form-select form-select-sm bg-dark text-light border-secondary" style="min-width: 180px;">
+                        <option value="">-- Tất cả loại --</option>
+                        @foreach (var c in (ViewBag.Categories as List<string>) ?? new List<string>())
+                        {
+                            <option value="@c" selected="@(c == ViewBag.SelectedCategory)">@c</option>
+                        }
+                    </select>
+                    <select name="sort" class="form-select form-select-sm bg-dark text-light border-secondary" style="min-width: 140px;">
+                        <option value="">Sắp xếp</option>
+                        <option value="price" selected="@("price" == (string)ViewBag.SelectedSort)">Giá</option>
+                        <option value="duration" selected="@("duration" == (string)ViewBag.SelectedSort)">Thời gian</option>
+                    </select>
+                    <button class="btn btn-light btn-sm px-4" type="submit">Áp dụng</button>
+                    <a class="btn btn-outline-light btn-sm px-4" href="/Services">Xóa lọc</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-4">
+            @if (!services.Any())
+            {
+                <div class="col-12">
+                    <div class="p-5 text-center text-white-50 border border-secondary-subtle rounded-4">
+                        Không tìm thấy dịch vụ phù hợp với bộ lọc hiện tại.
+                    </div>
+                </div>
+            }
+            else if (groupedServices != null)
+            {
+                foreach (var group in groupedServices)
+                {
+                    <div class="col-12">
+                        <h2 class="h5 text-uppercase fw-semibold text-white-50 border-bottom border-secondary-subtle pb-2 mb-0">@group.Key</h2>
+                    </div>
+                    foreach (var s in group)
+                    {
+                        <div class="col-md-6 col-xl-4">
+                            <div class="h-100 bg-black bg-opacity-60 border border-secondary-subtle rounded-4 overflow-hidden shadow-sm d-flex flex-column service-card" data-service-id="@s.ServiceId" style="backdrop-filter: blur(10px);">
+                                @if (!string.IsNullOrEmpty(s.ImageUrl))
+                                {
+                                    <img src="@s.ImageUrl" alt="@s.ServiceName" style="width:100%; height:200px; object-fit:cover;" />
+                                }
+                                <div class="p-4 d-flex flex-column flex-grow-1 gap-3">
+                                    <div>
+                                        <h3 class="h5 fw-semibold text-white mb-2">@s.ServiceName</h3>
+                                        <p class="mb-0 text-white-50">@s.Description</p>
+                                    </div>
+                                    <div class="mt-auto pt-3 border-top border-secondary-subtle d-flex flex-wrap align-items-center gap-3">
+                                        <div class="text-white me-auto">
+                                            <div class="fw-bold">@String.Format("{0:N0} đ", s.Price)</div>
+                                            @if (s.Duration.HasValue)
+                                            {
+                                                <div class="small text-white-50">@s.Duration phút</div>
+                                            }
+                                        </div>
+                                        <a class="btn btn-light btn-sm px-4" href="/Booking?serviceIds=@s.ServiceId">Đặt lịch</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                foreach (var s in services)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="h-100 bg-black bg-opacity-60 border border-secondary-subtle rounded-4 overflow-hidden shadow-sm d-flex flex-column service-card" data-service-id="@s.ServiceId" style="backdrop-filter: blur(10px);">
+                            @if (!string.IsNullOrEmpty(s.ImageUrl))
+                            {
+                                <img src="@s.ImageUrl" alt="@s.ServiceName" style="width:100%; height:200px; object-fit:cover;" />
+                            }
+                            <div class="p-4 d-flex flex-column flex-grow-1 gap-3">
+                                <div>
+                                    <h3 class="h5 fw-semibold text-white mb-2">@s.ServiceName</h3>
+                                    <p class="mb-0 text-white-50">@s.Description</p>
+                                </div>
+                                <div class="mt-auto pt-3 border-top border-secondary-subtle d-flex flex-wrap align-items-center gap-3">
+                                    <div class="text-white me-auto">
+                                        <div class="fw-bold">@String.Format("{0:N0} đ", s.Price)</div>
+                                        @if (s.Duration.HasValue)
+                                        {
+                                            <div class="small text-white-50">@s.Duration phút</div>
+                                        }
+                                    </div>
+                                    <a class="btn btn-light btn-sm px-4" href="/Booking?serviceIds=@s.ServiceId">Đặt lịch</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

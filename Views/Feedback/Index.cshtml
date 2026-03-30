@@ -1,0 +1,153 @@
+@model QuanLyTiemCatToc.Models.ViewModels.FeedbackPageViewModel
+@{
+    ViewData["Title"] = "Đánh giá";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+            <p class="text-uppercase text-muted small mb-1">Trải nghiệm khách hàng</p>
+            <h1 class="h3 mb-0">Đánh giá & phản hồi</h1>
+            <div class="text-muted">Xem nhận xét từ khách hàng khác hoặc đánh giá lịch đã hoàn thành của bạn.</div>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-dark">Tổng @Model.TotalReviews đánh giá</span>
+            <span class="badge bg-warning text-dark">Trung bình @Model.AverageRating.ToString("0.0") ⭐</span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-success">@Model.StatusMessage</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4 col-lg-3">
+            <div class="card h-100 p-4 p-md-5">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-2">Thống kê</h6>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="h1 fw-bold">@Model.AverageRating.ToString("0.0")</div>
+                        <div class="text-warning">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="fas fa-star@(i <= Math.Round(Model.AverageRating) ? "" : "-o")"></i>
+                            }
+                        </div>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            var count = Model.RatingDistribution.TryGetValue(i, out var c) ? c : 0;
+                            <li class="d-flex align-items-center justify-content-between mb-1">
+                                <span>@i ⭐</span>
+                                <span class="text-muted small">@count lượt</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-8 col-lg-9">
+            <div class="card h-100 p-4 p-md-5">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase small mb-0">Đánh giá gần đây</h6>
+                        <a class="btn btn-sm btn-outline-light" href="/Feedback/Create">Viết đánh giá (khách lẻ)</a>
+                    </div>
+                    @if (Model.RecentFeedbacks != null && Model.RecentFeedbacks.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var fb in Model.RecentFeedbacks)
+                            {
+                                <div class="list-group-item bg-transparent text-white-75 border-secondary-subtle">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div>
+                                            <div class="fw-semibold">@fb.Customer?.FullName ?? "Khách"</div>
+                                            <div class="text-muted small">@fb.CreatedAt?.ToString("dd/MM/yyyy")</div>
+                                            @if (fb.Service != null)
+                                            {
+                                                <div class="text-muted small">Dịch vụ: @fb.Service.ServiceName</div>
+                                            }
+                                        </div>
+                                        <div class="text-warning">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fas fa-star@(i <= (fb.Rating ?? 0) ? "" : "-o")"></i>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(fb.Comment))
+                                    {
+                                        <div class="mt-2 text-white">@fb.Comment</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-3">Chưa có đánh giá nào.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.IsAuthenticated)
+    {
+        <div class="card p-4 p-md-5">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="mb-0">Đánh giá lịch đã hoàn thành</h5>
+                        <div class="text-muted small">Số điện thoại: @Model.Phone</div>
+                    </div>
+                </div>
+                @if (Model.CompletedAppointments != null && Model.CompletedAppointments.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var apt in Model.CompletedAppointments)
+                        {
+                            var services = apt.AppointmentDetails?
+                                .Where(d => d.Service != null)
+                                .Select(d => d.Service!.ServiceName)
+                                .ToList() ?? new List<string>();
+                            <div class="list-group-item bg-transparent text-white-75 border-secondary-subtle">
+                                <div class="d-flex justify-content-between flex-wrap align-items-start gap-2">
+                                    <div>
+                                        <div class="fw-semibold">@apt.AppointmentDate.ToString("dd/MM/yyyy") @apt.AppointmentTime.ToString("HH:mm")</div>
+                                        <div class="text-muted small">Dịch vụ: @(services.Any() ? string.Join(", ", services) : "Đang cập nhật")</div>
+                                    </div>
+                                    <form method="post" asp-controller="Feedback" asp-action="Rate" class="d-flex flex-wrap gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="appointmentId" value="@apt.AppointmentId" />
+                                        <div class="d-flex align-items-center gap-1">
+                                            @for (int star = 5; star >= 1; star--)
+                                            {
+                                                <input type="radio" class="btn-check" name="rating" id="rating-@apt.AppointmentId-@star" value="@star" autocomplete="off">
+                                                <label class="btn btn-sm btn-outline-warning" for="rating-@apt.AppointmentId-@star">@star ⭐</label>
+                                            }
+                                        </div>
+                                        <input type="text" class="form-control form-control-sm" name="comment" placeholder="Nhận xét nhanh">
+                                        <button class="btn btn-sm btn-warning text-dark" type="submit">Đánh giá</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">Không có lịch hoàn thành để đánh giá.</div>
+                }
+            </div>
+        </div>
+    }
+</section>
+

@@ -1,0 +1,85 @@
+@model QuanLyTiemCatToc.Models.Service
+@{
+    ViewData["Title"] = "Sửa dịch vụ";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Sửa dịch vụ</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <form asp-area="Admin" asp-controller="Services" asp-action="Edit" asp-route-id="@Model.ServiceId" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="ServiceId" />
+                <input type="hidden" asp-for="ImageUrl" />
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ServiceName">Tên dịch vụ <span class="text-danger">*</span></label>
+                                <input asp-for="ServiceName" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Category">Danh mục</label>
+                                <input asp-for="Category" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Price">Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input asp-for="Price" type="number" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Duration">Thời lượng (phút)</label>
+                                <input asp-for="Duration" type="number" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="IsActive">Trạng thái</label>
+                                <select asp-for="IsActive" class="form-control">
+                                    <option value="true">Hoạt động</option>
+                                    <option value="false">Ẩn</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Mô tả</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Hình ảnh hiện tại</label>
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.ImageUrl" alt="Service image" style="max-height: 150px;" />
+                            </div>
+                        }
+                        <label>Thay đổi hình ảnh</label>
+                        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
+                        <small class="form-text text-muted">Để trống nếu không muốn thay đổi ảnh</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
