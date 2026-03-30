@@ -1,0 +1,106 @@
+@model QuanLyTiemCatToc.Models.Appointment
+@using QuanLyTiemCatToc.Models
+@using System.Linq
+@{
+    ViewData["Title"] = "Thêm lịch hẹn";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var services = ViewBag.Services as List<Service> ?? new List<Service>();
+    var selectedServiceIds = ViewBag.SelectedServiceIds as List<int> ?? new List<int>();
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Thêm lịch hẹn mới</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Khách hàng <span class="text-danger">*</span></label>
+                                <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.CustomerId" required></select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nhân viên</label>
+                                <select asp-for="StaffId" class="form-control" asp-items="ViewBag.StaffId">
+                                    <option value="">-- Chọn nhân viên --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Dịch vụ <span class="text-danger">*</span></label>
+                                <div class="border rounded p-3" style="max-height: 260px; overflow-y: auto;">
+                                    @if (services.Any())
+                                    {
+                                        foreach (var service in services)
+                                        {
+                                            var isChecked = selectedServiceIds.Contains(service.ServiceId);
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" name="serviceIds" value="@service.ServiceId" id="service-@service.ServiceId" @(isChecked ? "checked" : "") />
+                                                <label class="form-check-label" for="service-@service.ServiceId">
+                                                    <strong>@service.ServiceName</strong>
+                                                    <div class="small text-muted">@String.Format("{0:N0} đ", service.Price) @(service.Duration.HasValue ? $"• {service.Duration} phút" : "")</div>
+                                                </label>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small">Chưa có dịch vụ khả dụng.</div>
+                                    }
+                                </div>
+                                <small class="form-text text-muted">Chọn ít nhất một dịch vụ cho lịch hẹn.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Ngày hẹn <span class="text-danger">*</span></label>
+                                <input asp-for="AppointmentDate" type="date" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Giờ hẹn <span class="text-danger">*</span></label>
+                                <input asp-for="AppointmentTime" type="time" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                <select asp-for="Status" class="form-control">
+                                    <option value="Pending">Chờ xác nhận</option>
+                                    <option value="Confirmed">Đã xác nhận</option>
+                                    <option value="Completed">Hoàn thành</option>
+                                    <option value="Cancelled">Đã hủy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Ghi chú</label>
+                                <textarea asp-for="Note" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Lưu</button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>

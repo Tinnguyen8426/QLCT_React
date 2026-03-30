@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "Viết đánh giá";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container py-4">
+    <h1 class="mb-3">Viết đánh giá</h1>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="feedback-alert feedback-alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="feedback-alert feedback-alert-error">
+            @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@e.ErrorMessage</div>
+            }
+        </div>
+    }
+    <form method="post" class="feedback-form-container p-4 p-md-5">
+        <div class="mb-3">
+            <label class="form-label">Số điện thoại</label>
+            <input class="form-control" type="tel" name="phone" placeholder="Nhập số điện thoại đã sử dụng dịch vụ" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Đánh giá (1-5 sao)</label>
+            <select class="form-select" name="rating" required>
+                <option value="">-- Chọn --</option>
+                <option value="5">5 sao - Rất tốt</option>
+                <option value="4">4 sao - Tốt</option>
+                <option value="3">3 sao - Bình thường</option>
+                <option value="2">2 sao - Không tốt</option>
+                <option value="1">1 sao - Rất không tốt</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nhận xét</label>
+            <textarea class="form-control" name="comment" rows="4" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+        </div>
+        <button class="btn primary" type="submit">Gửi đánh giá</button>
+    </form>
+</section>
+
