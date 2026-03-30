@@ -1,0 +1,132 @@
+@model StorefrontViewModel
+@{
+    ViewData["Title"] = "Mỹ phẩm";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<div class="mb-5 text-center">
+    <span class="badge text-bg-light text-dark rounded-pill px-3 py-2 mb-3">Storefront</span>
+    <h1 class="fw-semibold">Mua mỹ phẩm chuẩn barber tại nhà</h1>
+    <p class="text-muted">Chọn nhanh, thêm vào giỏ, thanh toán tại salon hoặc giao tận nơi.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-3">
+        <div class="card bg-dark border-secondary-subtle shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Tìm kiếm</h5>
+                <form class="mt-3" method="get">
+                    <div class="mb-3">
+                        <input type="text" name="keyword" value="@Model.Keyword" class="form-control bg-black text-white border-secondary" placeholder="Tên sản phẩm, thương hiệu..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Danh mục</label>
+                        <select class="form-select bg-black text-white border-secondary" name="category">
+                            <option value="">Tất cả</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category" selected="@(Model.SelectedCategory == category ? "selected" : null)">@category</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn btn-light w-100" type="submit">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i>Lọc sản phẩm
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary-subtle shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="text-uppercase text-muted mb-3">Bán chạy</h6>
+                @if (!Model.BestSellers.Any())
+                {
+                    <p class="text-muted small mb-0">Đang cập nhật dữ liệu bán chạy...</p>
+                }
+                else
+                {
+                    foreach (var product in Model.BestSellers)
+                    {
+                        <div class="border-bottom border-secondary-subtle pb-3 mb-3">
+                            <div class="d-flex gap-3">
+                                <img src="@product.ImageUrl" alt="@product.ProductName" style="width:64px; height:64px; object-fit:cover;" class="rounded">
+                                <div>
+                                    <div class="fw-semibold small">@product.ProductName</div>
+                                    <div class="text-muted small">@product.Price.ToString("N0") đ</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @await Html.PartialAsync("_CartSummary", Model.Cart)
+    </div>
+
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="mb-0">Danh sách sản phẩm</h5>
+                <small class="text-muted">Tìm thấy @Model.Products.Count sản phẩm</small>
+            </div>
+            <a href="/Cart" class="btn btn-light text-dark shadow-sm border-0">
+                <i class="fa-solid fa-bag-shopping me-2"></i>Giỏ hàng (<span class="cart-count-display" data-cart-count-target>@Model.Cart.TotalQuantity</span>)
+            </a>
+        </div>
+
+        @if (!Model.Products.Any())
+        {
+            <div class="text-center text-muted border border-secondary-subtle rounded-4 p-5">
+                <i class="fa-regular fa-face-meh-blank fa-2x mb-3"></i>
+                <p class="mb-0">Không có sản phẩm phù hợp. Hãy thử từ khóa khác.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var product in Model.Products)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card h-100 border-secondary-subtle bg-black bg-opacity-50">
+                            <div class="position-relative">
+                                <img src="@product.ImageUrl" alt="@product.ProductName" class="card-img-top" style="height:220px; object-fit:cover;">
+                                @if (product.IsHighlighted)
+                                {
+                                    <span class="badge bg-primary position-absolute top-0 end-0 m-2">New</span>
+                                }
+                                @if (product.IsLowStock)
+                                {
+                                    <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-2">Sắp hết</span>
+                                }
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small class="text-muted">@product.Category</small>
+                                    <small class="text-muted">Kho: @product.StockQuantity</small>
+                                </div>
+                                <h5 class="card-title">@product.ProductName</h5>
+                                <p class="text-muted small flex-grow-1">@product.Description</p>
+                                <div class="mt-3 d-flex justify-content-between align-items-center">
+                                    <strong>@product.Price.ToString("N0") đ</strong>
+                                    <form asp-controller="Cart" asp-action="Add" method="post" class="add-to-cart-form" data-product="@product.ProductName">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@product.ProductId" />
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="quantity" class="form-control bg-black text-white border-secondary" value="1" min="1" max="10" />
+                                            <button class="btn btn-light add-to-cart-btn text-dark fw-semibold border-0" type="submit"><i class="fa-solid fa-cart-plus"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/storefront.js" asp-append-version="true"></script>
+}
