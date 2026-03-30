@@ -1,0 +1,21 @@
+@using Microsoft.AspNetCore.Mvc.Routing
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@model string
+
+@{
+    string controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string area = ViewContext.RouteData.Values["area"]?.ToString() ?? "";
+    
+    string menuClass = "nav-link";
+    string menuIconClass = "nav-icon";
+    string menuActiveClass = "active";
+
+    if (Model == $"{controller}_{action}")
+    {
+        menuClass += " " + menuActiveClass;
+        menuIconClass += " " + menuActiveClass;
+    }
+}
+
+@menuClass

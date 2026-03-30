@@ -1,0 +1,8 @@
+﻿bin/
+obj/
+appsettings.Development.json
+*.user
+.vs/
+*.sqlite
+build_errors.txt
+build_errs.txt

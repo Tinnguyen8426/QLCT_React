@@ -1,0 +1,56 @@
+.hero {
+    height: 500px;
+    position: relative;
+}
+
+.carousel-item {
+    height: 500px;
+}
+
+.carousel-item img {
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-caption {
+    bottom: 100px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.carousel-caption h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.carousel-caption p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.btn-primary {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+.carousel-indicators {
+    bottom: 30px;
+}
+
+.carousel-indicators [data-bs-target] {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #8B4513;
+}
+
+.carousel-indicators .active {
+    background-color: #6B350C;
+}
+
+/* Adjust login/register buttons */
+.navbar .btn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}

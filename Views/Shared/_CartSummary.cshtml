@@ -1,0 +1,44 @@
+@model CartViewModel
+
+<div class="card bg-dark border-secondary-subtle shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="mb-0">Giỏ hàng</h5>
+                <small class="text-muted">@(Model.TotalQuantity) sản phẩm</small>
+            </div>
+            <a class="btn btn-outline-light btn-sm" href="/Cart">Quản lý giỏ</a>
+        </div>
+
+        @if (!Model.Items.Any())
+        {
+            <div class="text-muted text-center py-3">
+                <i class="fa-regular fa-face-smile-beam fa-2x mb-2"></i>
+                <p class="mb-0">Giỏ hàng đang trống. Hãy thêm vài món yêu thích.</p>
+            </div>
+        }
+        else
+        {
+            <div class="cart-items-list mb-3">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="d-flex align-items-center gap-3 py-2 border-bottom border-secondary-subtle">
+                        <img src="@item.ImageUrl" alt="@item.ProductName" class="rounded" style="width: 56px; height: 56px; object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@item.ProductName</div>
+                            <small class="text-muted">x @item.Quantity</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold">@item.LineTotal.ToString("N0") đ</div>
+                            <small class="text-muted">@item.UnitPrice.ToString("N0") đ</small>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">Tổng</span>
+                <strong class="fs-5">@Model.TotalAmount.ToString("N0") đ</strong>
+            </div>
+        }
+    </div>
+</div>

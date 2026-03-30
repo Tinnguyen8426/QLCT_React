@@ -1,0 +1,108 @@
+@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+@using Microsoft.AspNetCore.Mvc.Routing
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="/Admin" class="brand-link">
+        <i class="fas fa-cut brand-image" style="font-size: 2rem; opacity: .8; margin-left: 10px;"></i>
+        <span class="brand-text font-weight-light">Quản lý Tiệm Cắt Tóc</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel (optional) -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #c2c7d0;"></i>
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">@User.Identity?.Name</a>
+                <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</small>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <!-- Bảng điều khiển -->
+                <li class="nav-item">
+                    <a href="/Admin" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Home" ? "active" : "")">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Bảng điều khiển</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ ĐẶT HẸN -->
+                <li class="nav-item">
+                    <a href="/Admin/Appointments" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Appointments" ? "active" : "")">
+                        <i class="nav-icon fas fa-calendar-alt"></i>
+                        <p>Lịch hẹn</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ KHÁCH HÀNG -->
+                <li class="nav-item">
+                    <a href="/Admin/Customers" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Customers" ? "active" : "")">
+                        <i class="nav-icon fas fa-users"></i>
+                        <p>Khách hàng</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ DỊCH VỤ -->
+                <li class="nav-item">
+                    <a href="/Admin/Services" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Services" ? "active" : "")">
+                        <i class="nav-icon fas fa-concierge-bell"></i>
+                        <p>Dịch vụ</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ MỸ PHẨM -->
+                <li class="nav-item">
+                    <a href="/Admin/Products" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Products" ? "active" : "")">
+                        <i class="nav-icon fas fa-box"></i>
+                        <p>Mỹ phẩm</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ ĐƠN MỸ PHẨM -->
+                <li class="nav-item">
+                    <a href="/Admin/ProductOrders" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "ProductOrders" ? "active" : "")">
+                        <i class="nav-icon fas fa-truck"></i>
+                        <p>Đơn mỹ phẩm</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ HÓA ĐƠN -->
+                <li class="nav-item">
+                    <a href="/Admin/Invoices" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Invoices" ? "active" : "")">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>Hóa đơn</p>
+                    </a>
+                </li>
+
+                <!-- QUẢN LÝ NHÂN VIÊN -->
+                <li class="nav-item">
+                    <a href="/Admin/Users" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Users" ? "active" : "")">
+                        <i class="nav-icon fas fa-user-tie"></i>
+                        <p>Nhân viên</p>
+                    </a>
+                </li>
+
+                <!-- BÁO CÁO & THỐNG KÊ -->
+                <li class="nav-item">
+                    <a href="/Admin/Reports" class="nav-link @(ViewBag.ActiveMenu?.ToString() == "Reports" ? "active" : "")">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <p>Báo cáo</p>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+</aside>

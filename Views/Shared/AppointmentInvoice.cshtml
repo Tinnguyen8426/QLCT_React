@@ -1,0 +1,197 @@
+@using System
+@model QuanLyTiemCatToc.Models.ViewModels.AppointmentInvoiceViewModel
+@{
+    Layout = ViewBag.LayoutPath ?? "_Layout";
+    ViewData["Title"] = ViewBag.InvoicePageTitle ?? "Hóa đơn lịch hẹn";
+    var backUrl = ViewBag.BackUrl as string ?? "/";
+    var finalAmount = Model.Subtotal - Model.Discount;
+    if (finalAmount < 0) finalAmount = 0;
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">@ViewData["Title"]</h1>
+                <p class="text-muted mb-0">Tổng hợp dịch vụ đã đặt và lập hóa đơn với vài thao tác.</p>
+            </div>
+            <div class="col-sm-6 text-right">
+                <a href="@backUrl" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        <div class="card">
+            <div class="card-body">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <h5 class="text-uppercase text-muted">Thông tin lịch hẹn</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Appointment.Customer?.FullName))
+                                    {
+                                        <div><strong>Khách hàng:</strong> @Model.Appointment.Customer!.FullName</div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(Model.Appointment.Customer?.Phone))
+                                    {
+                                        <div><strong>Số điện thoại:</strong> @Model.Appointment.Customer!.Phone</div>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Appointment.Staff?.FullName))
+                                    {
+                                        <div><strong>Nhân viên:</strong> @Model.Appointment.Staff!.FullName</div>
+                                    }
+                                    <div><strong>Thời gian:</strong> @Model.Appointment.AppointmentDate.ToString("dd/MM/yyyy") @Model.Appointment.AppointmentTime.ToString("HH:mm")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Dịch vụ</th>
+                                        <th class="text-center">SL</th>
+                                        <th class="text-right">Đơn giá</th>
+                                        <th class="text-right">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var detail in Model.Appointment.AppointmentDetails.Where(d => d.Service != null))
+                                    {
+                                        var qty = detail.Quantity ?? 1;
+                                        var subtotal = qty * detail.UnitPrice;
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">@detail.Service!.ServiceName</div>
+                                                @if (!string.IsNullOrWhiteSpace(detail.Note))
+                                                {
+                                                    <div class="text-muted small">@detail.Note</div>
+                                                }
+                                            </td>
+                                            <td class="text-center">@qty</td>
+                                            <td class="text-right">@String.Format("{0:N0} đ", detail.UnitPrice)</td>
+                                            <td class="text-right">@String.Format("{0:N0} đ", subtotal)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-right">Tạm tính</th>
+                                        <th class="text-right">@String.Format("{0:N0} đ", Model.Subtotal)</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <form asp-action="Invoice" method="post" class="invoice-settings-card border rounded p-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="AppointmentId" value="@Model.Appointment.AppointmentId" />
+                            <h5 class="mb-3">Thiết lập hóa đơn</h5>
+                            <div class="form-group">
+                                <label>Tổng dịch vụ</label>
+                                <input type="text" class="form-control" value="@String.Format("{0:N0} đ", Model.Subtotal)" readonly />
+                            </div>
+                            <div class="form-group">
+                                <label>Giảm giá</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="Discount" value="@Model.Discount.ToString("0")" min="0" max="@Model.Subtotal" step="1000" />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">đ</span>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Tối đa @String.Format("{0:N0} đ", Model.Subtotal)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Phương thức thanh toán</label>
+                                <select name="PaymentMethod" class="form-control">
+                                    @foreach (var option in Model.PaymentMethods)
+                                    {
+                                        <option value="@option" selected="@(string.Equals(option, Model.PaymentMethod, StringComparison.OrdinalIgnoreCase))">@option</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Khách phải trả</label>
+                                <div class="h4 text-success mb-0">@String.Format("{0:N0} đ", finalAmount)</div>
+                            </div>
+                            @if (Model.AllowCreation)
+                            {
+                                <button type="submit" class="btn btn-success btn-block">
+                                    <i class="fas fa-file-invoice"></i> Tạo hóa đơn
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info mb-0">
+                                    Lịch hẹn đã có hóa đơn. Xem chi tiết bên dưới.
+                                </div>
+                            }
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="m-0">Hóa đơn đã phát hành</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.ExistingInvoices.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thu ngân</th>
+                                    <th>Tổng</th>
+                                    <th>Giảm</th>
+                                    <th>Thực thu</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in Model.ExistingInvoices)
+                                {
+                                    <tr>
+                                        <td>#@invoice.InvoiceId</td>
+                                        <td>@invoice.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@invoice.Staff?.FullName ?? "Không xác định"</td>
+                                        <td>@String.Format("{0:N0} đ", invoice.Total)</td>
+                                        <td>@String.Format("{0:N0} đ", invoice.Discount ?? 0)</td>
+                                        <td>@String.Format("{0:N0} đ", invoice.FinalAmount ?? invoice.Total)</td>
+                                        <td class="text-right">
+                                            <a class="btn btn-outline-primary btn-sm" href="/Invoices/Details/@invoice.InvoiceId" target="_blank">
+                                                <i class="fas fa-eye"></i> Xem
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">Chưa phát hành hóa đơn nào cho lịch hẹn này.</div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

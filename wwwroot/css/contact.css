@@ -1,0 +1,56 @@
+.contact-info {
+    background-color: #f8f9fa;
+    padding: 2rem;
+    border-radius: 8px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+}
+
+.info-item i {
+    color: #8B4513;
+    font-size: 1.5rem;
+}
+
+.info-item div h5 {
+    color: #8B4513;
+    margin-bottom: 0.5rem;
+}
+
+.info-item div p {
+    margin-bottom: 0;
+}
+
+form {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+form .form-label {
+    font-weight: 500;
+}
+
+form .btn-primary {
+    background-color: #8B4513;
+    border-color: #8B4513;
+    padding: 0.5rem 2rem;
+}
+
+form .btn-primary:hover {
+    background-color: #6B350C;
+    border-color: #6B350C;
+}
+
+@media (max-width: 768px) {
+    .contact-info {
+        padding: 1rem;
+    }
+
+    form {
+        padding: 1rem;
+    }
+}
