@@ -1,0 +1,111 @@
+@model X.PagedList.IPagedList<QuanLyTiemCatToc.Models.Service>
+@using X.PagedList.Mvc.Core;
+@{
+    ViewData["Title"] = "Quản lý dịch vụ";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Quản lý dịch vụ</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Dịch vụ</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Danh sách dịch vụ</h3>
+                <div class="card-tools">
+                    <a href="@Url.Action("Create")" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Thêm dịch vụ
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        @TempData["SuccessMessage"]
+                    </div>
+                }
+
+                <div class="row">
+                    @foreach (var item in Model)
+                    {
+                        <div class="col-md-4 col-sm-6 mb-3">
+                            <div class="card h-100">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" class="card-img-top" style="height: 200px; object-fit: cover;" alt="@item.ServiceName" />
+                                }
+                                else
+                                {
+                                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-cut fa-3x text-white"></i>
+                                    </div>
+                                }
+                                <div class="card-body">
+                                    <h5 class="card-title">@item.ServiceName</h5>
+                                    <p class="card-text text-muted small">@(item.Description ?? "")</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="badge badge-success">@string.Format("{0:N0} đ", item.Price)</span>
+                                            <span class="badge badge-info">@item.Duration phút</span>
+                                        </div>
+                                        <div>
+                                            @if (item.IsActive == true)
+                                            {
+                                                <span class="badge badge-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-secondary">Ẩn</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-primary">@(item.Category ?? "Chưa phân loại")</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="@Url.Action("Edit", new { id = item.ServiceId })" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <button onclick="deleteService(@item.ServiceId)" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="card-footer clearfix">
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function deleteService(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
+                fetch('/Admin/Services/Delete/' + id, { method: 'POST' })
+                    .then(response => { if (response.ok) location.reload(); });
+            }
+        }
+    </script>
+}
