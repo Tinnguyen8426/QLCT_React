@@ -1,0 +1,45 @@
+@model QuanLyTiemCatToc.Models.Appointment
+@using System.Collections.Generic
+@using System.Linq
+@{
+    ViewData["Title"] = "Đặt lịch thành công";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+    var serviceNames = Model.AppointmentDetails?
+        .Where(x => x.Service != null)
+        .Select(x => x.Service!.ServiceName)
+        .Distinct()
+        .ToList() ?? new List<string>();
+
+    var serviceDisplay = serviceNames.Any() ? string.Join(", ", serviceNames) : "N/A";
+}
+
+<section class="container" style="padding:24px 0;">
+    <h1>Đặt lịch thành công</h1>
+    <p>Cảm ơn bạn đã đặt lịch. Chúng tôi sẽ sớm liên hệ xác nhận.</p>
+    <div style="border:1px solid #eee; border-radius:12px; padding:16px; margin-top:12px;">
+        <div><strong>Dịch vụ:</strong> @serviceDisplay</div>
+        <div><strong>Nhân viên:</strong> @(Model.Staff?.FullName ?? "Bất kỳ")</div>
+        <div><strong>Thời gian:</strong> @Model.AppointmentDate.ToString("dd/MM/yyyy") @Model.AppointmentTime.ToString("HH:mm")</div>
+        <div><strong>Khách hàng:</strong> @Model.Customer?.FullName - @Model.Customer?.Phone</div>
+        @{
+            var statusKey = string.IsNullOrWhiteSpace(Model.Status) ? "Pending" : Model.Status;
+            var statusLabel = statusTranslations.TryGetValue(statusKey, out string label) ? label : statusKey;
+        }
+        <div><strong>Trạng thái:</strong> @statusLabel</div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:12px;">
+        <a class="btn light" href="/">Về trang chủ</a>
+        <a class="btn primary" href="/Booking">Đặt thêm lịch</a>
+    </div>
+    </section>
+
+

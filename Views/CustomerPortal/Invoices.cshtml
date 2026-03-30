@@ -1,0 +1,59 @@
+@using System.Linq
+@model QuanLyTiemCatToc.Models.ViewModels.CustomerInvoicesViewModel
+@{
+    ViewData["Title"] = "Hóa đơn của tôi";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="pb-5">
+    <div class="mb-4">
+        <h1 class="h3 fw-semibold">Lịch sử thanh toán</h1>
+        <p class="text-white-50 mb-0">Theo dõi chi tiết phí dịch vụ và nhân viên thực hiện.</p>
+    </div>
+
+    @if (Model.Customer == null)
+    {
+        <div class="alert alert-warning">Chưa tìm thấy hồ sơ khách hàng tương ứng với tài khoản này. Hãy bổ sung thông tin trong phần Hồ sơ.</div>
+    }
+    else if (!Model.Invoices.Any())
+    {
+        <div class="border border-secondary-subtle rounded-4 p-5 text-center text-white-50">
+            Bạn chưa có hóa đơn nào.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive rounded-4 border border-secondary-subtle">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã hóa đơn</th>
+                        <th>Ngày tạo</th>
+                        <th>Nhân viên</th>
+                        <th>Dịch vụ</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Model.Invoices)
+                    {
+                        var services = string.Join(", ", invoice.InvoiceDetails
+                            .Where(d => d.Service != null)
+                            .Select(d => d.Service!.ServiceName));
+                        <tr>
+                            <td>HĐ #@invoice.InvoiceId</td>
+                            <td>@invoice.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(invoice.Staff?.FullName ?? "Không rõ")</td>
+                            <td>@(string.IsNullOrWhiteSpace(services) ? "Đang cập nhật" : services)</td>
+                            <td class="text-end fw-semibold">@((invoice.FinalAmount ?? 0).ToString("N0")) đ</td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-light btn-sm" asp-controller="Invoices" asp-action="Details" asp-route-id="@invoice.InvoiceId">Xem</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
