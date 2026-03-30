@@ -1,0 +1,61 @@
+/* Dark Theme for Buttons and Icons */
+:root {
+  --primary-dark: #2c3e50;
+  --primary-darker: #1a252f;
+  --accent-dark: #34495e;
+  --text-light: #ecf0f1;
+  --text-lighter: #ffffff;
+}
+
+/* Button Styles */
+.btn-primary {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-darker);
+  color: var(--text-light);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--primary-darker);
+  border-color: var(--primary-darker);
+  color: var(--text-lighter);
+}
+
+.btn-outline-primary {
+  color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+}
+
+/* Icon Colors */
+.text-primary {
+  color: var(--primary-dark) !important;
+}
+
+/* Navbar and Footer Links */
+.nav-link, .footer-link {
+  color: var(--primary-dark);
+}
+
+.nav-link:hover, .footer-link:hover {
+  color: var(--primary-darker);
+}
+
+/* Badges */
+.badge.bg-primary {
+  background-color: var(--primary-dark) !important;
+}
+
+/* Carousel Controls */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  filter: brightness(0) saturate(100%) invert(15%) sepia(15%) saturate(1400%) hue-rotate(170deg) brightness(95%) contrast(95%);
+}
+
+/* Star Ratings */
+.text-warning {
+  color: #e67e22 !important;
+}

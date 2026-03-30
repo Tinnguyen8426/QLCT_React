@@ -1,0 +1,29 @@
+
+/* Profile page specific styles */
+.profile-page .card {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--bs-border-color-translucent);
+    border-radius: 1rem;
+    color: #e8e9f0;
+}
+
+.profile-page .form-control,
+.profile-page .form-select {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    border-color: var(--bs-secondary);
+}
+
+.profile-page .form-control:focus,
+.profile-page .form-select:focus {
+    border-color: rgba(244, 197, 92, 0.6);
+    box-shadow: 0 0 0 3px rgba(244, 197, 92, 0.25);
+    color: #fff;
+}
+
+.profile-page .form-label,
+.profile-page .text-muted {
+    color: rgba(232, 233, 240, 0.72) !important;
+}

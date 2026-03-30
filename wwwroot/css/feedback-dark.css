@@ -1,0 +1,90 @@
+/* Feedback page specific styles for dark theme */
+
+.feedback-form-container,
+.card {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--bs-border-color-translucent);
+    border-radius: 1rem; /* 16px */
+    color: #e6e6f0;
+}
+
+.feedback-form-container {
+    max-width: 600px;
+}
+
+.feedback-form-container .form-control,
+.feedback-form-container .form-select,
+.card .form-control {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    border-color: var(--bs-secondary);
+}
+
+.feedback-form-container .form-control::placeholder {
+    color: #a0a0a0;
+}
+
+.feedback-form-container .form-control:focus,
+.feedback-form-container .form-select:focus,
+.card .form-control:focus {
+    border-color: #f4c55c;
+    box-shadow: 0 0 0 3px rgba(244, 197, 92, 0.25);
+}
+
+.feedback-form-container .btn.primary {
+    background-color: var(--bs-warning);
+    color: #000;
+    border: none;
+}
+.feedback-form-container .btn.primary:hover {
+    filter: brightness(1.05);
+}
+
+.feedback-alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+}
+
+.feedback-alert-success {
+    color: #b7ffcb;
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.2);
+}
+
+.feedback-alert-error {
+    color: #ffb3ae;
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.2);
+}
+
+
+/* Styles for Index.cshtml */
+.list-group-item {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e6e6f0;
+}
+
+.text-white {
+    color: #fff !important;
+}
+
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.card .btn-sm.btn-warning {
+    --bs-btn-bg: #f4c55c;
+    --bs-btn-color: #1c1406;
+    --bs-btn-border-color: #f4c55c;
+    --bs-btn-hover-bg: #eab84b;
+    --bs-btn-hover-border-color: #e8b441;
+}
+
+.card .form-control-sm {
+    min-width: 180px;
+}
