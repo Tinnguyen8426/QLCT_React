@@ -1,0 +1,66 @@
+@{
+    ViewData["Title"] = "Liên hệ";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container" style="padding:24px 0;">
+    <h1 style="margin:0 0 16px;">Liên hệ</h1>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
+        <div>
+            <h3 style="margin:0 0 12px;">Thông tin liên hệ</h3>
+            <div style="margin-bottom:12px;">
+                <strong>Địa chỉ:</strong><br />
+                123 Đường ABC, Quận XYZ, TP.HCM
+            </div>
+            <div style="margin-bottom:12px;">
+                <strong>Số điện thoại:</strong><br />
+                <a href="tel:0123456789">0123 456 789</a>
+            </div>
+            <div style="margin-bottom:12px;">
+                <strong>Email:</strong><br />
+                <a href="mailto:contact@barber.com">contact@barber.com</a>
+            </div>
+            <div>
+                <strong>Giờ làm việc:</strong><br />
+                Thứ 2 - Chủ nhật: 09:00 - 20:00
+            </div>
+        </div>
+        <div>
+            <h3 style="margin:0 0 12px;">Bản đồ</h3>
+            <div
+                style="width:100%; height:320px; border:1px solid #eee; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+                <iframe
+                    title="Bản đồ cửa hàng"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.486669214925!2d106.7010858248179!3d10.773988789374627!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f46fd67ea19%3A0x57881ba4c546af7a!2zUGjDtMyBIMSRaSBiw7TMoyBOZ3V5w6rMg24gSHXDqsyjLCBOZ3V5w6rMg24gSHXDqsyjLCBC4bq_biBOZ2jDqSwgUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgVmnhu4d0IE5hbQ!5e0!3m2!1svi!2s!4v1766403181005!5m2!1svi!2s"
+                    width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:32px; border-top:1px solid #eee; padding-top:24px;">
+        <h3 style="margin:0 0 12px;">Gửi phản hồi</h3>
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div
+                style="border:1px solid #28a745; color:#155724; background:#d4edda; padding:12px; border-radius:8px; margin-bottom:16px;">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        <form method="post" style="max-width:600px;">
+            <div style="margin-bottom:12px;">
+                <label>Họ tên</label>
+                <input class="form-control" type="text" name="fullName" required />
+            </div>
+            <div style="margin-bottom:12px;">
+                <label>Email</label>
+                <input class="form-control" type="email" name="email" required />
+            </div>
+            <div style="margin-bottom:12px;">
+                <label>Nội dung</label>
+                <textarea class="form-control" name="message" rows="5" required></textarea>
+            </div>
+            <button class="btn primary" type="submit">Gửi</button>
+        </form>
+    </div>
+</section>
