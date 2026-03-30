@@ -1,0 +1,377 @@
+@using System.Collections.Generic
+@{
+    ViewData["Title"] = "Trang quản trị";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Bảng điều khiển</h1>
+            </div><!-- /.col -->
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Bảng điều khiển</li>
+                </ol>
+            </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Small boxes (Stat box) -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>@(ViewBag.InvoicesToday ?? 0)</h3>
+                        <p>Hóa đơn hôm nay</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-bag"></i>
+                    </div>
+                    <a href="/Admin/Invoices" class="small-box-footer">Xem chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <!-- ./col -->
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>@string.Format("{0:N0}", ViewBag.RevenueThisMonth ?? 0)<sup style="font-size: 20px">đ</sup></h3>
+                        <p>Doanh thu tháng này</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-stats-bars"></i>
+                    </div>
+                    <a href="/Admin/Invoices" class="small-box-footer">Xem chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <!-- ./col -->
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@(ViewBag.TotalCustomers ?? 0)</h3>
+                        <p>Khách hàng</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-person-add"></i>
+                    </div>
+                    <a href="/Admin/Customers" class="small-box-footer">Xem chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <!-- ./col -->
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>@(ViewBag.AppointmentsToday ?? 0)</h3>
+                        <p>Lịch hẹn hôm nay</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-pie-graph"></i>
+                    </div>
+                    <a href="/Admin/Appointments" class="small-box-footer">Xem chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <!-- ./col -->
+        </div>
+        <!-- /.row -->
+
+        <div class="row">
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info"><i class="far fa-calendar-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Tổng lịch hẹn</span>
+                        <span class="info-box-number">@ViewBag.TotalAppointments</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-success"><i class="far fa-file-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Tổng hóa đơn</span>
+                        <span class="info-box-number">@ViewBag.TotalInvoices</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12 col-sm-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-warning"><i class="fas fa-dollar-sign"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Tổng doanh thu</span>
+                        <span class="info-box-number">@string.Format("{0:N0}", @ViewBag.TotalRevenue) đ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main row -->
+        <div class="row">
+            <!-- Left col -->
+            <section class="col-lg-7 connectedSortable">
+                <!-- Custom tabs (Charts with tabs)-->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-pie mr-1"></i>
+                            Thống kê đơn hàng
+                        </h3>
+                    </div><!-- /.card-header -->
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="info-box bg-info">
+                                    <span class="info-box-icon"><i class="fas fa-hourglass-half"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Chờ xác nhận</span>
+                                        <span class="info-box-number">@(ViewBag.PendingAppointments ?? 0)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="info-box bg-primary">
+                                    <span class="info-box-icon"><i class="fas fa-truck"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Đã hoàn thành hôm nay</span>
+                                        <span class="info-box-number">@(ViewBag.CompletedToday ?? 0)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="info-box bg-success">
+                                    <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Khách hàng mới tháng này</span>
+                                        <span class="info-box-number">@(ViewBag.NewCustomersThisMonth ?? 0)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+
+                <!-- TABLE: LATEST ORDERS -->
+                <div class="card">
+                    <div class="card-header border-transparent">
+                        <h3 class="card-title">Đơn hàng mới nhất</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table m-0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã đơn</th>
+                                        <th>Khách hàng</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày đặt</th>
+                                        <th>Tùy chọn</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (ViewBag.UpcomingAppointments != null)
+                                    {
+                                        foreach (var appointment in ViewBag.UpcomingAppointments)
+                                        {
+                                            <tr>
+                                                <td><a href="/Admin/Appointments/Details/@appointment.AppointmentId">#@appointment.AppointmentId</a></td>
+                                                <td>@(appointment.Customer?.FullName ?? "Không có")</td>
+                                                <td>
+                                                    @{
+                                                        string statusClass = "badge badge-info";
+                                                        var statusKey = string.IsNullOrWhiteSpace(appointment.Status) ? "Pending" : appointment.Status;
+                                                        var statusLabel = statusTranslations.TryGetValue(statusKey, out string translated) ? translated : statusKey;
+                                                        switch (appointment.Status)
+                                                        {
+                                                            case "Pending":
+                                                                statusClass = "badge badge-warning";
+                                                                break;
+                                                            case "Confirmed":
+                                                                statusClass = "badge badge-info";
+                                                                break;
+                                                            case "Completed":
+                                                                statusClass = "badge badge-success";
+                                                                break;
+                                                            case "Cancelled":
+                                                                statusClass = "badge badge-danger";
+                                                                break;
+                                                            default:
+                                                                statusClass = "badge badge-secondary";
+                                                                break;
+                                                        }
+                                                    }
+                                                    <span class="@statusClass">@statusLabel</span>
+                                                </td>
+                                                <td>
+                                                    <div class="sparkbar" data-color="#00a65a" data-height="20">@appointment.AppointmentDate.ToString("dd/MM/yyyy") @appointment.AppointmentTime.ToString("HH:mm")</div>
+                                                </td>
+                                                <td>
+                                                    <a href="/Admin/Appointments/Details/@appointment.AppointmentId" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center">Chưa có lịch hẹn nào</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- /.table-responsive -->
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer clearfix">
+                        <a href="/Admin/Appointments" class="btn btn-sm btn-info float-right">Xem tất cả lịch hẹn</a>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </section>
+            <!-- /.Left col -->
+
+            <!-- right col (We are only adding the ID to make the widgets sortable)-->
+            <section class="col-lg-5 connectedSortable">
+                <!-- PRODUCT LIST -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Thống kê hệ thống</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body p-0">
+                        <ul class="products-list product-list-in-card pl-2 pr-2">
+                            <li class="item">
+                                <div class="product-info">
+                                    <a href="/Admin/Services" class="product-title">Dịch vụ
+                                        <span class="badge badge-info float-right">@(ViewBag.TotalServices ?? 0)</span>
+                                    </a>
+                                    <span class="product-description">
+                                        Số lượng dịch vụ hiện có trong hệ thống
+                                    </span>
+                                </div>
+                            </li>
+                            <!-- /.item -->
+                            <li class="item">
+                                <div class="product-info">
+                                    <a href="/Admin/Users" class="product-title">Nhân viên
+                                        <span class="badge badge-success float-right">@(ViewBag.TotalUsers ?? 0)</span>
+                                    </a>
+                                    <span class="product-description">
+                                        Tổng số nhân viên hiện có trong hệ thống
+                                    </span>
+                                </div>
+                            </li>
+                            <!-- /.item -->
+                            <li class="item">
+                                <div class="product-info">
+                                    <a href="/Admin/Customers" class="product-title">Khách hàng mới
+                                        <span class="badge badge-warning float-right">@(ViewBag.NewCustomersThisMonth ?? 0)</span>
+                                    </a>
+                                    <span class="product-description">
+                                        Số lượng khách hàng mới trong tháng này
+                                    </span>
+                                </div>
+                            </li>
+                            <!-- /.item -->
+                            <li class="item">
+                                <div class="product-info">
+                                    <a href="/Admin/Invoices" class="product-title">Doanh thu tháng này
+                                        <span class="badge badge-danger float-right">@string.Format("{0:N0}", ViewBag.RevenueThisMonth ?? 0) đ</span>
+                                    </a>
+                                    <span class="product-description">
+                                        Tổng doanh thu từ các hóa đơn trong tháng này
+                                    </span>
+                                </div>
+                            </li>
+                            <!-- /.item -->
+                        </ul>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer text-center">
+                        <a href="/Admin/Reports" class="uppercase">Xem chi tiết báo cáo</a>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+
+                <!-- Calendar -->
+                <div class="card bg-gradient-success">
+                    <div class="card-header border-0">
+                        <h3 class="card-title">
+                            <i class="far fa-calendar-alt"></i>
+                            Lịch
+                        </h3>
+                        <!-- tools card -->
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-success btn-sm" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                        <!-- /. tools -->
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body pt-0">
+                        <!--The calendar -->
+                        <div id="calendar" style="width: 100%"></div>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+            </section>
+            <!-- right col -->
+        </div>
+        <!-- /.row (main row) -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+
+@section Scripts {
+    <!-- Ion icons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <!-- Calendar -->
+    <script src="~/AdminAssets/plugins/moment/moment.min.js"></script>
+    <script src="~/AdminAssets/plugins/fullcalendar/main.js"></script>
+    <script>
+        $(function () {
+            // The Calender
+            $('#calendar').datetimepicker({
+                format: 'L',
+                inline: true
+            });
+        });
+    </script>
+}
