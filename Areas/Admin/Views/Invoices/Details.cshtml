@@ -1,0 +1,204 @@
+@using System.Collections.Generic
+@using QuanLyTiemCatToc.Helpers
+@model QuanLyTiemCatToc.Models.Invoice
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var paymentTranslations = new Dictionary<string, string>
+    {
+        ["Cash"] = "Tiền mặt",
+        ["Card"] = "Thẻ",
+        ["Transfer"] = "Chuyển khoản"
+    };
+    Func<string, string> fulfillmentBadge = status => ProductOrderStatusHelper.Normalize(status) switch
+    {
+        ProductOrderStatusHelper.Completed => "badge badge-success",
+        ProductOrderStatusHelper.Shipping => "badge badge-info",
+        ProductOrderStatusHelper.Packing => "badge badge-primary",
+        ProductOrderStatusHelper.Confirmed => "badge badge-primary",
+        ProductOrderStatusHelper.Cancelled => "badge badge-danger",
+        _ => "badge badge-warning"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Chi tiết hóa đơn #@Model.InvoiceId</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-file-invoice"></i> Thông tin hóa đơn</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <strong>Mã hóa đơn:</strong> #@Model.InvoiceId<br />
+                                <strong>Ngày tạo:</strong> @Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")<br />
+                                @{
+                                    var paymentKey = string.IsNullOrWhiteSpace(Model.PaymentMethod) ? string.Empty : Model.PaymentMethod;
+                                    var paymentLabel = string.IsNullOrEmpty(paymentKey) ? "-" : paymentTranslations.TryGetValue(paymentKey, out string methodLabel) ? methodLabel : paymentKey;
+                                }
+                                <strong>Phương thức thanh toán:</strong> @paymentLabel
+                                @if (!string.IsNullOrWhiteSpace(Model.FulfillmentStatus))
+                                {
+                                    var normalizedStatus = ProductOrderStatusHelper.Normalize(Model.FulfillmentStatus);
+                                    <br />
+                                    <strong>Trạng thái giao:</strong>
+                                    <span class="@fulfillmentBadge(normalizedStatus)">@ProductOrderStatusHelper.Translate(normalizedStatus)</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.ShippingAddress))
+                                {
+                                    <br />
+                                    <strong>Địa chỉ giao:</strong> @Model.ShippingAddress
+                                }
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Khách hàng:</strong> @(Model.Customer?.FullName ?? "-")<br />
+                                <strong>Nhân viên:</strong> @(Model.Staff?.FullName ?? "-")<br />
+                                @if (Model.Appointment != null)
+                                {
+                                    <strong>Lịch hẹn:</strong> <a href="/Admin/Appointments/Details/@Model.AppointmentId">#@Model.AppointmentId</a>
+                                }
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <h5 class="mb-3">Chi tiết dịch vụ & sản phẩm</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Loại</th>
+                                    <th>Tên</th>
+                                    <th>Đơn giá</th>
+                                    <th>Số lượng</th>
+                                    <th>Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int index = 1;
+                                }
+                                @foreach (var detail in Model.InvoiceDetails)
+                                {
+                                    <tr>
+                                        <td>@index</td>
+                                        <td>
+                                            @if (detail.ServiceId.HasValue)
+                                            {
+                                                <span class="badge badge-primary">Dịch vụ</span>
+                                            }
+                                            else if (detail.ProductId.HasValue)
+                                            {
+                                                <span class="badge badge-success">Sản phẩm</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (detail.ServiceId.HasValue && detail.Service != null)
+                                            {
+                                                @detail.Service.ServiceName
+                                            }
+                                            else if (detail.ProductId.HasValue && detail.Product != null)
+                                            {
+                                                @detail.Product.ProductName
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Đã xóa</span>
+                                            }
+                                        </td>
+                                        <td>@string.Format("{0:N0} đ", detail.UnitPrice)</td>
+                                        <td>@detail.Quantity</td>
+                                        <td>@string.Format("{0:N0} đ", detail.Subtotal)</td>
+                                    </tr>
+                                    index++;
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Tổng cộng:</strong></td>
+                                    <td><strong>@string.Format("{0:N0} đ", Model.Total)</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Giảm giá:</strong></td>
+                                    <td><strong>@string.Format("{0:N0} đ", Model.Discount)</strong></td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td colspan="4" class="text-right"><strong>TỔNG THANH TOÁN:</strong></td>
+                                    <td><strong class="text-success">@string.Format("{0:N0} đ", Model.FinalAmount)</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="card-footer">
+                        <a href="@Url.Action("Print", new { id = Model.InvoiceId })" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-print"></i> In hóa đơn
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Tóm tắt</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-success"><i class="fas fa-shopping-bag"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Số mục</span>
+                                <span class="info-box-number">@Model.InvoiceDetails.Count</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-box-icon bg-primary"><i class="fas fa-cut"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Dịch vụ</span>
+                                <span class="info-box-number">@Model.InvoiceDetails.Count(d => d.ServiceId.HasValue)</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-box-icon bg-info"><i class="fas fa-box"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Sản phẩm</span>
+                                <span class="info-box-number">@Model.InvoiceDetails.Count(d => d.ProductId.HasValue)</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-box-icon bg-info"><i class="fas fa-dollar-sign"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Tổng tiền</span>
+                                <span class="info-box-number">@string.Format("{0:N0}", Model.Total) đ</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-box-icon bg-warning"><i class="fas fa-percent"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Giảm giá</span>
+                                <span class="info-box-number">@string.Format("{0:N0}", Model.Discount) đ</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-box-icon bg-danger"><i class="fas fa-money-bill-wave"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Thanh toán</span>
+                                <span class="info-box-number">@string.Format("{0:N0}", Model.FinalAmount) đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

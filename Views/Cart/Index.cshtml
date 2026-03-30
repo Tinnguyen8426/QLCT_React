@@ -1,0 +1,119 @@
+@model CartViewModel
+@{
+    ViewData["Title"] = "Giỏ hàng của bạn";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-semibold mb-1">Giỏ hàng</h1>
+        <small class="text-muted">@Model.TotalQuantity sản phẩm</small>
+    </div>
+    @if (Model.Items.Any())
+    {
+        <form asp-action="Clear" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1"></i>Dọn giỏ</button>
+        </form>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (!Model.Items.Any())
+{
+    <div class="text-center text-muted border border-secondary-subtle rounded-4 p-5">
+        <i class="fa-regular fa-face-smile fa-2x mb-3"></i>
+        <p>Giỏ hàng trống. Hãy ghé <a href="/Store">khu vực bán mỹ phẩm</a> để chọn sản phẩm.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-secondary-subtle shadow-sm">
+                <div class="card-body">
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center border-bottom border-secondary-subtle py-3">
+                            <img src="@item.ImageUrl" alt="@item.ProductName" class="rounded" style="width: 96px; height: 96px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">@item.ProductName</h5>
+                                <small class="text-muted">Đơn giá: @item.UnitPrice.ToString("N0") đ</small>
+                            </div>
+                            <form asp-action="Update" method="post" class="d-flex align-items-center gap-2 cart-update-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                <input type="number" name="quantity" class="form-control form-control-sm bg-black text-white border-secondary" value="@item.Quantity" min="1" max="20" />
+                                <button class="btn btn-outline-light btn-sm" type="submit">
+                                    <i class="fa-solid fa-rotate"></i>
+                                </button>
+                            </form>
+                            <form asp-action="Remove" method="post" class="cart-remove-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                <button class="btn btn-outline-danger btn-sm" type="submit">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </form>
+                            <div class="text-end fw-semibold">@item.LineTotal.ToString("N0") đ</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card bg-dark border-secondary-subtle shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Checkout" method="post" class="cart-checkout-form">
+                        @Html.AntiForgeryToken()
+                        <h5 class="card-title">Tổng quan</h5>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span>Tạm tính</span>
+                            <strong class="cart-total-amount">@Model.TotalAmount.ToString("N0") đ</strong>
+                        </div>
+                        <hr />
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Họ tên</label>
+                            <input class="form-control bg-black text-white border-secondary" type="text" name="fullName" placeholder="Tên người nhận" value="@ViewBag.ContactName" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Số điện thoại</label>
+                            <input class="form-control bg-black text-white border-secondary" type="tel" name="phone" placeholder="Liên hệ xác nhận đơn" value="@ViewBag.ContactPhone" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Địa chỉ giao hàng</label>
+                            <textarea class="form-control bg-black text-white border-secondary address-autocomplete" name="address" rows="2" placeholder="Số nhà, đường, phường/xã, quận/huyện" autocomplete="street-address" required>@ViewBag.ContactAddress</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Hình thức nhận hàng</label>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" id="paySalon" value="Tại salon" checked>
+                                    <label class="form-check-label" for="paySalon">Giữ hàng và thanh toán tại salon</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" id="payDelivery" value="Giao hàng">
+                                    <label class="form-check-label" for="payDelivery">Yêu cầu giao hàng và thu tiền</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-light w-100" type="submit">Tiếp tục thanh toán</button>
+                        <p class="text-muted small mt-3 mb-0">Chúng tôi sẽ giữ giỏ hàng, liên hệ xác nhận và hướng dẫn thanh toán.</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="/js/storefront.js" asp-append-version="true"></script>
+}

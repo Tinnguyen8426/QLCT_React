@@ -1,0 +1,197 @@
+@using System.Collections.Generic
+@{
+    ViewData["Title"] = "Báo cáo thống kê";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Báo cáo & Thống kê</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Lọc theo khoảng thời gian</h3>
+            </div>
+            <div class="card-body">
+                <form method="get">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                        </div>
+                        <div class="col-md-5">
+                            <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-filter"></i> Lọc
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>@string.Format("{0:N0} đ", ViewBag.TotalRevenue)</h3>
+                        <p>Tổng doanh thu</p>
+                    </div>
+                    <div class="icon"><i class="ion ion-stats-bars"></i></div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@ViewBag.NewCustomers</h3>
+                        <p>Khách hàng mới</p>
+                    </div>
+                    <div class="icon"><i class="ion ion-person-add"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Dịch vụ phổ biến</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Dịch vụ</th>
+                                    <th>Số lần sử dụng</th>
+                                    <th>Doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var service in ViewBag.TopServices)
+                                {
+                                    <tr>
+                                        <td>@service.ServiceName</td>
+                                        <td>@service.Count</td>
+                                        <td>@string.Format("{0:N0} đ", service.Revenue)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Nhân viên xuất sắc</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Nhân viên</th>
+                                    <th>Số hóa đơn</th>
+                                    <th>Doanh thu mang lại</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var staff in ViewBag.TopStaff)
+                                {
+                                    <tr>
+                                        <td>@staff.StaffName</td>
+                                        <td>@staff.Count</td>
+                                        <td>@string.Format("{0:N0} đ", staff.Revenue)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lịch hẹn theo trạng thái</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="appointmentsByStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var appointmentsByStatus = @Html.Raw(Json.Serialize(ViewBag.AppointmentsByStatus));
+            var statusTranslations = @Html.Raw(Json.Serialize(statusTranslations));
+
+            var labels = appointmentsByStatus.map(function (item) {
+                return statusTranslations[item.status] || item.status;
+            });
+            var data = appointmentsByStatus.map(function (item) {
+                return item.count;
+            });
+
+            var ctx = document.getElementById('appointmentsByStatusChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Lịch hẹn',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Lịch hẹn theo trạng thái'
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
