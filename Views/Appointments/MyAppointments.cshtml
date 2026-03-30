@@ -1,0 +1,99 @@
+@using System.Collections.Generic
+@using System.Linq
+@model IEnumerable<QuanLyTiemCatToc.Models.Appointment>
+@{
+    ViewData["Title"] = "Lịch hẹn của tôi";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container py-4">
+    <h1 class="h2 mb-4">Lịch hẹn của tôi</h1>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card p-4 mb-4">
+        <form method="post" class="d-flex flex-wrap gap-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <div class="flex-grow-1">
+                <label for="phone-input" class="form-label">Số điện thoại</label>
+                <input id="phone-input" class="form-control" type="tel" name="phone" value="@ViewBag.Phone" placeholder="Nhập số điện thoại đã đặt lịch" @(ViewBag.IsLockedPhone == true ? "readonly" : "") required />
+                @if (ViewBag.IsLockedPhone == true)
+                {
+                    <small class="text-muted">Đang dùng số điện thoại từ tài khoản đã đăng nhập.</small>
+                }
+            </div>
+            <button class="btn btn-warning text-dark" type="submit" @(ViewBag.IsLockedPhone == true ? "disabled" : "")>Tìm kiếm</button>
+        </form>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        var statusTranslations = new Dictionary<string, string>
+        {
+            ["Pending"] = "Chờ xác nhận",
+            ["Confirmed"] = "Đã xác nhận",
+            ["Completed"] = "Hoàn thành",
+            ["Cancelled"] = "Đã hủy",
+            ["No-show"] = "Vắng mặt"
+        };
+
+        <div class="list-group">
+            @foreach (var apt in Model)
+            {
+                var serviceNames = apt.AppointmentDetails?
+                    .Where(x => x.Service != null)
+                    .Select(x => x.Service!.ServiceName)
+                    .Distinct()
+                    .ToList() ?? new List<string>();
+
+                var serviceDisplay = serviceNames.Any() ? string.Join(", ", serviceNames) : "Đang cập nhật";
+                
+                <div class="list-group-item list-group-item-action flex-column align-items-start card mb-3 p-3">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">@serviceDisplay</h5>
+                        <small>@apt.AppointmentDate.ToString("dd/MM/yyyy") @apt.AppointmentTime.ToString("HH:mm")</small>
+                    </div>
+                    <p class="mb-1 text-muted">Nhân viên: @(apt.Staff?.FullName ?? "Chưa phân công")</p>
+                    
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        @{
+                            var statusClass = apt.Status switch
+                            {
+                                "Completed" => "bg-success",
+                                "Confirmed" => "bg-primary",
+                                "Cancelled" => "bg-danger",
+                                "No-show" => "bg-secondary",
+                                _ => "bg-warning text-dark"
+                            };
+                            var statusKey = string.IsNullOrWhiteSpace(apt.Status) ? "Pending" : apt.Status;
+                            var statusLabel = statusTranslations.TryGetValue(statusKey, out string label) ? label : statusKey;
+                        }
+                        <span class="badge @statusClass">@statusLabel</span>
+                        
+                        @if (apt.Status != "Completed" && apt.Status != "Cancelled")
+                        {
+                            <form method="post" action="/Appointments/Cancel/@apt.AppointmentId" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Bạn có chắc chắn muốn hủy lịch hẹn này không?');">Hủy</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (ViewBag.Phone != null)
+    {
+        <div class="card p-5 text-center text-muted">Không tìm thấy lịch hẹn nào.</div>
+    }
+</section>
+
