@@ -1,0 +1,170 @@
+@using System.Collections.Generic
+@model QuanLyTiemCatToc.Models.Customer
+@{
+    ViewData["Title"] = "Chi tiết khách hàng";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var statusTranslations = new Dictionary<string, string>
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h1 class="m-0">Chi tiết khách hàng</h1>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile">
+                        <div class="text-center">
+                            <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        </div>
+                        <h3 class="profile-username text-center">@Model.FullName</h3>
+                        <p class="text-muted text-center">@(Model.Gender ?? "Chưa xác định")</p>
+                        <ul class="list-group list-group-unbordered mb-3">
+                            <li class="list-group-item">
+                                <b>Số điện thoại</b> <a class="float-right">@Model.Phone</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Email</b> <a class="float-right">@(Model.Email ?? "-")</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Ngày sinh</b> <a class="float-right">@(Model.Birthday?.ToString("dd/MM/yyyy") ?? "-")</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Ngày tạo</b> <a class="float-right">@Model.CreatedAt?.ToString("dd/MM/yyyy")</a>
+                            </li>
+                        </ul>
+                        <a href="@Url.Action("Edit", new { id = Model.CustomerId })" class="btn btn-warning btn-block">
+                            <i class="fas fa-edit"></i> Sửa thông tin
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Thống kê</h3>
+                    </div>
+                    <div class="card-body">
+                        <strong><i class="fas fa-calendar-check mr-1"></i> Tổng lịch hẹn</strong>
+                        <p class="text-muted">@ViewBag.TotalAppointments lịch hẹn</p>
+                        <hr>
+                        <strong><i class="fas fa-check-circle mr-1"></i> Đã hoàn thành</strong>
+                        <p class="text-muted">@ViewBag.CompletedAppointments lịch</p>
+                        <hr>
+                        <strong><i class="fas fa-money-bill-wave mr-1"></i> Tổng chi tiêu</strong>
+                        <p class="text-muted">@string.Format("{0:N0} đ", ViewBag.TotalSpent)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header p-2">
+                        <ul class="nav nav-pills">
+                            <li class="nav-item"><a class="nav-link active" href="#appointments" data-toggle="tab">Lịch hẹn</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#invoices" data-toggle="tab">Hóa đơn</a></li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div class="active tab-pane" id="appointments">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th>
+                                            <th>Giờ</th>
+                                            <th>Dịch vụ</th>
+                                            <th>Nhân viên</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var apt in Model.Appointments.OrderByDescending(a => a.AppointmentDate))
+                                        {
+                                            var serviceNames = apt.AppointmentDetails?
+                                                .Where(d => d.Service != null)
+                                                .Select(d => d.Service!.ServiceName)
+                                                .Distinct()
+                                                .ToList() ?? new List<string>();
+                                            var serviceLabel = serviceNames.Any() ? string.Join(", ", serviceNames) : "-";
+                                            <tr>
+                                                <td>@apt.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                                                <td>@apt.AppointmentTime.ToString("HH:mm")</td>
+                                                <td>@serviceLabel</td>
+                                                <td>@(apt.Staff?.FullName ?? "-")</td>
+                                                <td>
+                                                    @{
+                                                        var statusClass = apt.Status switch
+                                                        {
+                                                            "Completed" => "badge-success",
+                                                            "Confirmed" => "badge-primary",
+                                                            "Cancelled" => "badge-danger",
+                                                            _ => "badge-warning"
+                                                        };
+                                                        var statusKey = string.IsNullOrWhiteSpace(apt.Status) ? "Pending" : apt.Status;
+                                                        var statusLabel = statusTranslations.TryGetValue(statusKey, out string label) ? label : statusKey;
+                                                    }
+                                                    <span class="badge @statusClass">@statusLabel</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="tab-pane" id="invoices">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã HĐ</th>
+                                            <th>Ngày</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Giảm giá</th>
+                                            <th>Thanh toán</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var inv in Model.Invoices.OrderByDescending(i => i.CreatedAt))
+                                        {
+                                            <tr>
+                                                <td>@inv.InvoiceId</td>
+                                                <td>@inv.CreatedAt?.ToString("dd/MM/yyyy")</td>
+                                                <td>@string.Format("{0:N0} đ", inv.Total)</td>
+                                                <td>@string.Format("{0:N0} đ", inv.Discount)</td>
+                                                <td><strong>@string.Format("{0:N0} đ", inv.FinalAmount)</strong></td>
+                                                <td>
+                                                    <a href="/Admin/Invoices/Details/@inv.InvoiceId" class="btn btn-xs btn-info">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
