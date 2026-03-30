@@ -1,0 +1,287 @@
+@{
+    ViewData["Title"] = "Thống kê doanh thu";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Thống kê doanh thu</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Thống kê doanh thu</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Info boxes -->
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-money-bill-wave"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Tổng doanh thu</span>
+                        <span class="info-box-number">
+                            @ViewBag.TotalRevenue.ToString("N0") <small>VNĐ</small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box mb-3">
+                    <span class="info-box-icon bg-success elevation-1"><i class="fas fa-shopping-cart"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Đơn hàng đã thanh toán</span>
+                        <span class="info-box-number">@ViewBag.PaidOrdersCount</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box mb-3">
+                    <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-chart-line"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Giá trị đơn hàng trung bình</span>
+                        <span class="info-box-number">
+                            @ViewBag.AverageOrderValue.ToString("N0") <small>VNĐ</small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box mb-3">
+                    <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-calendar-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Doanh thu tháng này</span>
+                        <span class="info-box-number">
+                            @ViewBag.CurrentMonthRevenue.ToString("N0") <small>VNĐ</small>
+                            @{
+                                string changeIcon = ViewBag.RevenueChange >= 0 ? "up" : "down";
+                                string changeClass = ViewBag.RevenueChange >= 0 ? "text-success" : "text-danger";
+                            }
+                            <small class="@changeClass">
+                                <i class="fas fa-arrow-@changeIcon"></i> @Math.Abs(ViewBag.RevenueChange).ToString("N1")%
+                            </small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thống kê chi tiết -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu 30 ngày gần nhất</h3>
+                        <div class="card-tools">
+                            <a href="/Admin/Revenue/Monthly" class="btn btn-tool">
+                                <i class="fas fa-chart-bar"></i> Xem theo tháng
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="revenueChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo danh mục sản phẩm</h3>
+                        <div class="card-tools">
+                            <a href="/Admin/Revenue/Categories" class="btn btn-tool">
+                                <i class="fas fa-list"></i> Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="categoryChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Top 5 sản phẩm bán chạy</h3>
+                        <div class="card-tools">
+                            <a href="/Admin/Revenue/Products" class="btn btn-tool">
+                                <i class="fas fa-list"></i> Xem tất cả
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="products-list product-list-in-card pl-2 pr-2">
+                            @foreach (var product in ViewBag.TopProducts)
+                            {
+                                <li class="item">
+                                    <div class="product-info">
+                                        <a href="/Admin/AdminProduct/Details/@product.ProductId" class="product-title">
+                                            @product.ProductName
+                                            <span class="badge badge-info float-right">@product.Revenue.ToString("N0") VNĐ</span>
+                                        </a>
+                                        <span class="product-description">
+                                            Đã bán: @product.QuantitySold | Đơn giá: @product.UnitPrice.ToString("N0") VNĐ
+                                        </span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="/Admin/Revenue/Products" class="uppercase">Xem tất cả sản phẩm</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo thời gian</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue" class="nav-link active">
+                                    <i class="fas fa-calendar-day mr-2"></i> Theo ngày (30 ngày)
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Monthly" class="nav-link">
+                                    <i class="fas fa-calendar-alt mr-2"></i> Theo tháng
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Yearly" class="nav-link">
+                                    <i class="fas fa-calendar mr-2"></i> Theo năm
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /.content -->
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo ngày
+        var dailyLabels = [];
+        var dailyData = [];
+        
+        @foreach (var item in ViewBag.DailyRevenueData)
+        {
+            @:dailyLabels.push('@item.Date.ToString("dd/MM")');
+            @:dailyData.push(@item.Revenue);
+        }
+        
+        // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo danh mục
+        var categoryLabels = [];
+        var categoryData = [];
+        var categoryColors = [
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(199, 199, 199, 0.8)'
+        ];
+        
+        @foreach (var item in ViewBag.CategoryRevenue)
+        {
+            @:categoryLabels.push('@item.CategoryName');
+            @:categoryData.push(@item.Revenue);
+        }
+        
+        // Khởi tạo biểu đồ doanh thu theo ngày
+        var revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        var revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: dailyData,
+                    backgroundColor: 'rgba(60, 141, 188, 0.5)',
+                    borderColor: 'rgba(60, 141, 188, 1)',
+                    borderWidth: 1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('vi-VN').format(context.raw) + ' đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Khởi tạo biểu đồ doanh thu theo danh mục
+        var categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        var categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: categoryColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.label || '';
+                                var value = context.raw;
+                                var total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                var percentage = Math.round((value / total) * 100);
+                                return label + ': ' + new Intl.NumberFormat('vi-VN').format(value) + ' đ (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

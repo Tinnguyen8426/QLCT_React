@@ -1,0 +1,231 @@
+@model StaffAppointmentListViewModel
+@using X.PagedList.Mvc.Core
+@using System.Linq
+@{
+    ViewData["Title"] = "Lịch hẹn của tôi";
+    var statusTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Pending"] = "Chờ xác nhận",
+        ["Confirmed"] = "Đã xác nhận",
+        ["Completed"] = "Hoàn thành",
+        ["Cancelled"] = "Đã hủy",
+        ["No-show"] = "Vắng mặt"
+    };
+    var statusOptions = statusTranslations.Keys.ToList();
+    Func<string?, string> badgeClass = status =>
+        status?.ToLowerInvariant() switch
+        {
+            "completed" => "badge bg-success",
+            "confirmed" => "badge bg-info text-dark",
+            "cancelled" => "badge bg-danger",
+            "no-show" => "badge bg-warning text-dark",
+            _ => "badge bg-secondary"
+        };
+    Func<QuanLyTiemCatToc.Models.Appointment, string> serviceList = appointment =>
+    {
+        var services = appointment.AppointmentDetails?
+            .Where(d => d.Service != null)
+            .Select(d => d.Service!.ServiceName)
+            .ToList() ?? new List<string>();
+        return services.Any() ? string.Join(", ", services) : "Đang cập nhật";
+    };
+}
+
+<div class="appointments-shell text-white">
+    @if (TempData["StatusMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm mb-4">
+            @TempData["StatusMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm mb-4">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <p class="text-uppercase text-white-50 small mb-1">Lịch hẹn phụ trách</p>
+            <h1 class="h3 text-white mb-2">Theo dõi & cập nhật theo thời gian thực</h1>
+            <p class="text-white-50 mb-0">Lọc theo trạng thái, ngày và tìm kiếm theo tên khách để xử lý nhanh.</p>
+        </div>
+        <a class="btn btn-warning text-dark fw-semibold" href="/Booking">
+            <i class="fas fa-plus me-2"></i>Đặt lịch mới
+        </a>
+    </div>
+
+    <form method="get" class="filter-toolbar rounded-4 p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label text-white-50 small">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text text-white-50 border-secondary"><i class="fas fa-search"></i></span>
+                    <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control border-secondary" placeholder="Tên khách, số điện thoại hoặc dịch vụ">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label text-white-50 small">Ngày phục vụ</label>
+                <input type="date" name="date" value="@Model.DateFilter?.ToString("yyyy-MM-dd")" class="form-control border-secondary">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label text-white-50 small">Trạng thái</label>
+                <select id="filter-status" name="status" class="form-select border-secondary text-white">
+                    <option value="">Tất cả</option>
+                    @foreach (var option in statusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(option, Model.StatusFilter, StringComparison.OrdinalIgnoreCase))">@statusTranslations[option]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex align-items-end gap-2">
+                <button class="btn btn-warning text-dark w-100" type="submit"><i class="fas fa-filter me-2"></i>Lọc</button>
+                <a class="btn btn-outline-light" asp-area="Staff" asp-controller="Appointments" asp-action="Index"><i class="fas fa-rotate-left"></i></a>
+            </div>
+        </div>
+    </form>
+
+    <div class="status-summary d-flex flex-wrap gap-3 mb-4">
+        @foreach (var kv in Model.StatusOverview)
+        {
+            var label = statusTranslations.TryGetValue(kv.Key, out var translated) ? translated : kv.Key;
+            <a class="status-chip @(string.Equals(kv.Key, Model.StatusFilter, StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+               asp-area="Staff" asp-controller="Appointments" asp-action="Index" asp-route-status="@kv.Key">
+                <span>@label</span>
+                <strong>@kv.Value</strong>
+            </a>
+        }
+    </div>
+
+    <div class="card border-0 rounded-4 shadow-sm bg-surface">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark-custom table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Khung giờ</th>
+                            <th>Khách hàng</th>
+                            <th>Dịch vụ</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-end">Quản lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Appointments.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-white-50 py-5">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block text-white-25"></i>
+                                    Không tìm thấy lịch hẹn phù hợp với bộ lọc hiện tại.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model.Appointments)
+                            {
+                                var statusKey = string.IsNullOrWhiteSpace(item.Status) ? "Pending" : item.Status;
+                                var statusLabel = statusTranslations.TryGetValue(statusKey, out var label) ? label : statusKey;
+                                var latestInvoice = item.Invoices?
+                                    .OrderByDescending(i => i.CreatedAt)
+                                    .FirstOrDefault();
+                                var hasInvoice = latestInvoice != null;
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@item.AppointmentDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="text-white-50 small">@item.AppointmentDate.ToString("dddd")</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary text-dark mb-1"><i class="fas fa-clock me-1"></i>@item.AppointmentTime.ToString("HH:mm")</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@item.Customer?.FullName</div>
+                                        <div class="text-white-50 small">@item.Customer?.Phone</div>
+                                    </td>
+                                    <td>
+                                        <div class="text-white-75">@serviceList(item)</div>
+                                        @if (hasInvoice)
+                                        {
+                                            <div class="text-success small mt-1">
+                                                <i class="fas fa-file-invoice-dollar me-1"></i>
+                                                HĐ #@latestInvoice!.InvoiceId · @String.Format("{0:N0} đ", latestInvoice.FinalAmount ?? latestInvoice.Total)
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-white-50 small mt-1">
+                                                <i class="fas fa-receipt me-1"></i> Chưa có hóa đơn
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="@badgeClass(statusKey)">@statusLabel</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex flex-column align-items-end gap-2">
+                                            <form asp-area="Staff" asp-controller="Appointments" asp-action="UpdateStatus" method="post" class="d-flex flex-wrap justify-content-end gap-2">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.AppointmentId" />
+                                                <input type="hidden" name="returnSearchTerm" value="@Model.SearchTerm" />
+                                                <input type="hidden" name="returnStatus" value="@Model.StatusFilter" />
+                                                @if (Model.DateFilter.HasValue)
+                                                {
+                                                    <input type="hidden" name="returnDate" value="@Model.DateFilter.Value.ToString("yyyy-MM-dd")" />
+                                                }
+                                                <input type="hidden" name="returnPage" value="@Model.Appointments.PageNumber" />
+                                                <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                                    @foreach (var option in statusOptions)
+                                                    {
+                                                        <option value="@option" selected="@(string.Equals(option, statusKey, StringComparison.OrdinalIgnoreCase))">@statusTranslations[option]</option>
+                                                    }
+                                                </select>
+                                                <button class="btn btn-sm btn-outline-light" type="submit">Cập nhật</button>
+                                            </form>
+                                            <div class="btn-group btn-group-sm flex-wrap">
+                                                <a class="btn btn-outline-light @(hasInvoice ? "" : "text-warning")"
+                                                   asp-area="Staff" asp-controller="Appointments" asp-action="Invoice"
+                                                   asp-route-id="@item.AppointmentId"
+                                                   title="@(hasInvoice ? "Xem hóa đơn" : "Tạo hóa đơn")">
+                                                    <i class="fas @(hasInvoice ? "fa-file-invoice-dollar" : "fa-file-invoice")"></i>
+                                                </a>
+                                                @if (hasInvoice)
+                                                {
+                                                    <a class="btn btn-outline-light" href="/Invoices/Details/@latestInvoice!.InvoiceId" target="_blank" title="In hóa đơn">
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                }
+                                                <a class="btn btn-outline-light" href="tel:@item.Customer?.Phone"><i class="fas fa-phone"></i></a>
+                                                <a class="btn btn-outline-light" asp-area="Staff" asp-controller="Appointments" asp-action="Index" asp-route-searchTerm="@item.Customer?.FullName"><i class="fas fa-search"></i></a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent border-0">
+            <div class="d-flex justify-content-between flex-wrap gap-3 align-items-center text-white-50">
+                <div>
+                    Hiển thị @Model.Appointments.FirstItemOnPage-@Model.Appointments.LastItemOnPage trong tổng @Model.Appointments.TotalItemCount lịch hẹn.
+                </div>
+                <nav>
+                    @Html.PagedListPager(Model.Appointments, page => Url.Action("Index", new { page, Model.SearchTerm, Model.StatusFilter, date = Model.DateFilter?.ToString("yyyy-MM-dd") }))
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const filterStatusSelect = document.getElementById('filter-status');
+        if (filterStatusSelect) {
+            filterStatusSelect.addEventListener('change', () => filterStatusSelect.form?.submit());
+        }
+    </script>
+}

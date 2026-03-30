@@ -1,0 +1,202 @@
+@{
+    ViewData["Title"] = "Thống kê doanh thu theo tháng";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Thống kê doanh thu theo tháng</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Admin">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/Revenue">Thống kê doanh thu</a></li>
+                    <li class="breadcrumb-item active">Theo tháng</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Info boxes -->
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-calendar-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Doanh thu năm @ViewBag.CurrentYear</span>
+                        <span class="info-box-number">
+                            @ViewBag.YearlyTotal.ToString("N0") <small>VNĐ</small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-6">
+                <div class="info-box mb-3">
+                    <span class="info-box-icon bg-success elevation-1"><i class="fas fa-chart-line"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">So với năm trước</span>
+                        <span class="info-box-number">
+                            @{
+                                string changeIcon = ViewBag.YearlyChange >= 0 ? "up" : "down";
+                                string changeClass = ViewBag.YearlyChange >= 0 ? "text-success" : "text-danger";
+                            }
+                            <small class="@changeClass">
+                                <i class="fas fa-arrow-@changeIcon"></i> @Math.Abs(ViewBag.YearlyChange).ToString("N1")%
+                            </small>
+                            <small>(@ViewBag.PreviousYearTotal.ToString("N0") VNĐ)</small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main row -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo tháng năm @ViewBag.CurrentYear</h3>
+                        <div class="card-tools">
+                            <a href="/Admin/Revenue/Yearly" class="btn btn-tool">
+                                <i class="fas fa-chart-bar"></i> Xem theo năm
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="monthlyRevenueChart" style="min-height: 300px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Chi tiết doanh thu theo tháng</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Tháng</th>
+                                    <th>Doanh thu</th>
+                                    <th>Tỷ lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    decimal totalYearlyRevenue = ViewBag.YearlyTotal > 0 ? ViewBag.YearlyTotal : 1;
+                                }
+                                @foreach (var item in ViewBag.MonthlyRevenueData)
+                                {
+                                    <tr>
+                                        <td>@item.MonthName</td>
+                                        <td>@item.Revenue.ToString("N0") VNĐ</td>
+                                        <td>
+                                            <div class="progress progress-xs">
+                                                <div class="progress-bar bg-primary" style="width: @((item.Revenue / totalYearlyRevenue * 100).ToString("0"))%"></div>
+                                            </div>
+                                            <span class="badge bg-primary">@((item.Revenue / totalYearlyRevenue * 100).ToString("0.0"))%</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Doanh thu theo thời gian</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue" class="nav-link">
+                                    <i class="fas fa-calendar-day mr-2"></i> Theo ngày (30 ngày)
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Monthly" class="nav-link active">
+                                    <i class="fas fa-calendar-alt mr-2"></i> Theo tháng
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Revenue/Yearly" class="nav-link">
+                                    <i class="fas fa-calendar mr-2"></i> Theo năm
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- /.content -->
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo tháng
+        var monthlyLabels = [];
+        var monthlyData = [];
+        
+        @foreach (var item in ViewBag.MonthlyRevenueData)
+        {
+            @:monthlyLabels.push('@item.MonthName');
+            @:monthlyData.push(@item.Revenue);
+        }
+        
+        // Khởi tạo biểu đồ doanh thu theo tháng
+        var monthlyCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        var monthlyChart = new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: monthlyData,
+                    backgroundColor: 'rgba(60, 141, 188, 0.7)',
+                    borderColor: 'rgba(60, 141, 188, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat('vi-VN').format(context.raw) + ' đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
