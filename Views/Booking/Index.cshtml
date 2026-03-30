@@ -1,0 +1,380 @@
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@{
+    ViewData["Title"] = "Đặt lịch";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+
+    var services = ViewBag.Services as List<QuanLyTiemCatToc.Models.Service> ?? new List<QuanLyTiemCatToc.Models.Service>();
+    var selectedServiceIds = ViewBag.SelectedServiceIds as List<int> ?? new List<int>();
+    var bookingPrefill = ViewBag.BookingPrefill as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var isCustomerLoggedIn = ViewBag.IsCustomerLoggedIn as bool? ?? false;
+    var categories = services
+        .Select(s => string.IsNullOrWhiteSpace(s.Category) ? "Khác" : s.Category)
+        .Distinct()
+        .OrderBy(c => c)
+        .ToList();
+    var initialCategory = Context?.Request?.Query["category"].ToString() ?? string.Empty;
+    var initialSort = Context?.Request?.Query["sort"].ToString() ?? string.Empty;
+
+    string GetInputValue(string key)
+    {
+        if (ViewData?.ModelState?.TryGetValue(key, out var entry) == true)
+        {
+            var attempted = entry.AttemptedValue;
+            if (!string.IsNullOrEmpty(attempted))
+            {
+                return attempted;
+            }
+            if (entry.RawValue is string rawString && !string.IsNullOrEmpty(rawString))
+            {
+                return rawString;
+            }
+            if (entry.RawValue is string[] rawArray && rawArray.Length > 0)
+            {
+                return rawArray[0];
+            }
+        }
+
+        if (Context?.Request?.HasFormContentType == true)
+        {
+            var formValue = Context.Request.Form[key];
+            if (!string.IsNullOrEmpty(formValue))
+            {
+                return formValue.ToString();
+            }
+        }
+
+        var queryValue = Context?.Request?.Query[key];
+        if (!string.IsNullOrEmpty(queryValue))
+        {
+            return queryValue.ToString();
+        }
+
+        if (bookingPrefill.TryGetValue(key, out var presetValue) && !string.IsNullOrEmpty(presetValue))
+        {
+            return presetValue;
+        }
+
+        return string.Empty;
+    }
+}
+
+<section class="py-5 position-relative">
+    <div class="container position-relative">
+        <div class="bg-black bg-opacity-50 border border-secondary-subtle rounded-4 p-4 p-md-5 text-white shadow-sm" style="backdrop-filter: blur(12px);">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-4">
+                <div>
+                    <h1 class="display-6 fw-semibold mb-2 text-white">Đặt lịch</h1>
+                    <p class="mb-0 text-white-50">Nhập thông tin và lựa chọn các dịch vụ bạn muốn trải nghiệm.</p>
+                </div>
+            </div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger border-0 shadow-sm mt-4 mb-0">
+                    @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@e.ErrorMessage</div>
+                    }
+                </div>
+            }
+        </div>
+
+        <form method="post" class="mt-4">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="bg-black bg-opacity-50 border border-secondary-subtle rounded-4 p-4 text-white shadow-sm booking-info-card" style="backdrop-filter: blur(12px);">
+                        <h2 class="h5 fw-semibold mb-3 text-white">Thông tin khách hàng</h2>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50">Nhân viên (tuỳ chọn)</label>
+                            <select class="form-select bg-dark text-light border-secondary" name="staffId" asp-items="ViewBag.StaffId">
+                                <option value="">-- Bất kỳ --</option>
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label text-white-50">Ngày</label>
+                                <input class="form-control bg-dark text-light border-secondary" type="date" name="date" value="@(GetInputValue("date"))" required />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label text-white-50">Giờ</label>
+                                <input class="form-control bg-dark text-light border-secondary" type="time" name="time" value="@(GetInputValue("time"))" required />
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label text-white-50">Họ tên</label>
+                            <input class="form-control bg-dark text-light border-secondary" type="text" name="fullName" value="@(GetInputValue("fullName"))" required />
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label text-white-50">Số điện thoại</label>
+                            <input class="form-control bg-dark text-light border-secondary" type="tel" name="phone" value="@(GetInputValue("phone"))" required />
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label text-white-50">Ghi chú</label>
+                            <textarea class="form-control bg-dark text-light border-secondary" name="note" rows="3">@GetInputValue("note")</textarea>
+                        </div>
+                        <div class="mt-4 pt-3 border-top border-secondary-subtle">
+                            <button class="btn btn-primary w-100 py-2" type="submit">Xác nhận đặt lịch</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="bg-black bg-opacity-50 border border-secondary-subtle rounded-4 p-4 text-white shadow-sm h-100" style="backdrop-filter: blur(12px);">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3">
+                            <div>
+                                <h2 class="h5 fw-semibold mb-1 text-white">Chọn dịch vụ</h2>
+                                <p class="mb-0 text-white-50">Chọn một hoặc nhiều dịch vụ cho lịch hẹn này.</p>
+                            </div>
+                            <div class="text-white-50 small">Đã chọn <span id="selected-services-count">@selectedServiceIds.Count</span> dịch vụ</div>
+                        </div>
+                        <div class="d-flex flex-column flex-lg-row align-items-lg-end gap-3 mb-4">
+                            <div class="d-flex flex-column flex-sm-row gap-3">
+                                <div>
+                                    <label class="form-label text-white-50 small mb-1" for="filter-category">Loại dịch vụ</label>
+                                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="filter-category" data-initial="@initialCategory">
+                                        <option value="">Tất cả</option>
+                                        @foreach (var category in categories)
+                                        {
+                                            <option value="@category">@category</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label text-white-50 small mb-1" for="filter-sort">Sắp xếp</label>
+                                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="filter-sort" data-initial="@initialSort">
+                                        <option value="">Mặc định</option>
+                                        <option value="price">Giá</option>
+                                        <option value="duration">Thời gian</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="ms-lg-auto">
+                                <button class="btn btn-outline-light btn-sm px-3" id="reset-filters" type="button" disabled>Bỏ lọc</button>
+                            </div>
+                        </div>
+                        <div class="row g-3" id="services-grid">
+                            @foreach (var svc in services)
+                            {
+                                var isChecked = selectedServiceIds.Contains(svc.ServiceId);
+                                var categoryName = string.IsNullOrWhiteSpace(svc.Category) ? "Khác" : svc.Category;
+                                <div class="col-sm-6 booking-service-item"
+                                     data-name="@svc.ServiceName"
+                                     data-category="@categoryName"
+                                     data-price="@Convert.ToDouble(svc.Price)"
+                                     data-duration="@(svc.Duration?.ToString() ?? "")">
+                                    <label class="booking-service-card @(isChecked ? "selected" : "")">
+                                        <input type="checkbox" name="serviceIds" value="@svc.ServiceId" class="service-select" @(isChecked ? "checked" : "") />
+                                        @if (!string.IsNullOrEmpty(svc.ImageUrl))
+                                        {
+                                            <img src="@svc.ImageUrl" alt="@svc.ServiceName" />
+                                        }
+                                        <div class="booking-service-card-body">
+                                            <div class="fw-semibold text-white">@svc.ServiceName</div>
+                                            @if (!string.IsNullOrWhiteSpace(svc.Description))
+                                            {
+                                                <div class="small text-white-50">@svc.Description</div>
+                                            }
+                                            <div class="mt-auto pt-3 border-top border-secondary-subtle">
+                                                <div class="fw-bold text-white">@String.Format("{0:N0} đ", svc.Price)</div>
+                                                @if (svc.Duration.HasValue)
+                                                {
+                                                    <div class="small text-white-50">@svc.Duration phút</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div id="no-services-message" class="text-white-50 text-center py-5 border border-secondary-subtle rounded-4 mt-3 d-none">
+                            Không tìm thấy dịch vụ phù hợp với bộ lọc hiện tại.
+                        </div>
+                        <div class="text-white-50 small mt-3">Vui lòng chọn ít nhất một dịch vụ trước khi xác nhận.</div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+    .booking-service-card {
+        position: relative;
+        display: block;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        min-height: 180px;
+    }
+
+    .booking-service-card:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 12px 20px -16px rgba(255, 255, 255, 0.45);
+    }
+
+    .booking-service-card img {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+    }
+
+    .booking-service-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        min-height: 160px;
+    }
+
+    .booking-service-card input.service-select {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .booking-service-card::after {
+        content: "";
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: rgba(0, 0, 0, 0.25);
+        transition: all 0.2s ease;
+    }
+
+    .booking-service-card::before {
+        content: "";
+        position: absolute;
+        top: 18px;
+        right: 20px;
+        width: 6px;
+        height: 12px;
+        border: solid transparent;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .booking-service-card.selected {
+        border-color: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 12px 24px -16px rgba(255, 255, 255, 0.6);
+        transform: translateY(-2px);
+    }
+
+    .booking-service-card.selected::after {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .booking-service-card.selected::before {
+        border-color: rgba(17, 17, 17, 0.9);
+        opacity: 1;
+    }
+
+    @@media (min-width: 992px) {
+        .booking-info-card {
+            position: sticky;
+            top: 64px;
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const cards = Array.from(document.querySelectorAll('.booking-service-card'));
+        const counter = document.getElementById('selected-services-count');
+        const grid = document.getElementById('services-grid');
+        const categoryFilter = document.getElementById('filter-category');
+        const sortFilter = document.getElementById('filter-sort');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const noServicesMessage = document.getElementById('no-services-message');
+
+        const updateSelectionState = () => {
+            let selected = 0;
+            cards.forEach(card => {
+                const input = card.querySelector('.service-select');
+                if (!input) return;
+                const isChecked = input.checked;
+                card.classList.toggle('selected', isChecked);
+                if (isChecked) selected++;
+            });
+            if (counter) {
+                counter.textContent = selected.toString();
+            }
+        };
+
+        const applyFilters = () => {
+            if (!grid) return;
+            const items = Array.from(grid.querySelectorAll('.booking-service-item'));
+            const selectedCategory = categoryFilter?.value ?? '';
+            const selectedSort = sortFilter?.value ?? '';
+
+            const sortedItems = items.slice().sort((a, b) => {
+                if (selectedSort === 'price') {
+                    return (parseFloat(a.dataset.price || '0') || 0) - (parseFloat(b.dataset.price || '0') || 0);
+                }
+                if (selectedSort === 'duration') {
+                    const toDuration = (value) => {
+                        const parsed = parseFloat(value);
+                        return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+                    };
+                    return toDuration(a.dataset.duration) - toDuration(b.dataset.duration);
+                }
+                const nameA = (a.dataset.name || '').toString();
+                const nameB = (b.dataset.name || '').toString();
+                return nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+            });
+
+            sortedItems.forEach(item => grid.appendChild(item));
+
+            let visibleCount = 0;
+            sortedItems.forEach(item => {
+                const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
+                item.classList.toggle('d-none', !matchesCategory);
+                if (matchesCategory) {
+                    visibleCount++;
+                }
+            });
+
+            if (resetFiltersBtn) {
+                const shouldEnable = !!selectedCategory || !!selectedSort;
+                resetFiltersBtn.disabled = !shouldEnable;
+            }
+
+            if (noServicesMessage) {
+                noServicesMessage.classList.toggle('d-none', visibleCount > 0);
+            }
+        };
+
+        cards.forEach(card => {
+            const input = card.querySelector('.service-select');
+            if (!input) return;
+            input.addEventListener('change', updateSelectionState);
+        });
+
+        if (categoryFilter) {
+            categoryFilter.value = categoryFilter.dataset.initial || '';
+            categoryFilter.addEventListener('change', applyFilters);
+        }
+        if (sortFilter) {
+            sortFilter.value = sortFilter.dataset.initial || '';
+            sortFilter.addEventListener('change', applyFilters);
+        }
+        resetFiltersBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (categoryFilter) categoryFilter.value = '';
+            if (sortFilter) sortFilter.value = '';
+            applyFilters();
+        });
+
+        applyFilters();
+        updateSelectionState();
+    })();
+</script>
