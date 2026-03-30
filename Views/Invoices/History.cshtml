@@ -1,0 +1,53 @@
+@model IEnumerable<QuanLyTiemCatToc.Models.Invoice>
+@{
+    ViewData["Title"] = "Lịch sử giao dịch";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container py-4">
+    <h1 class="h2 mb-4">Lịch sử giao dịch</h1>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    <div class="card p-4 mb-4">
+        <form method="post" class="d-flex flex-wrap gap-2 align-items-end">
+            <div class="flex-grow-1">
+                <label for="phone-input" class="form-label">Số điện thoại</label>
+                <input id="phone-input" class="form-control" type="tel" name="phone" value="@ViewBag.Phone" placeholder="Nhập số điện thoại" @(ViewBag.IsLockedPhone == true ? "readonly" : "") required />
+                @if (ViewBag.IsLockedPhone == true)
+                {
+                    <small class="text-muted">Đang dùng số điện thoại từ tài khoản đã đăng nhập.</small>
+                }
+            </div>
+            <button class="btn btn-warning text-dark" type="submit" @(ViewBag.IsLockedPhone == true ? "disabled" : "")>Tìm kiếm</button>
+        </form>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="list-group">
+            @foreach (var inv in Model)
+            {
+                <a href="/Invoices/Details/@inv.InvoiceId" class="list-group-item list-group-item-action flex-column align-items-start card mb-3 p-3">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">Hóa đơn #@inv.InvoiceId</h5>
+                        <small>@inv.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-muted">Nhân viên: @(inv.Staff?.FullName ?? "-")</p>
+                            <small>@inv.PaymentMethod</small>
+                        </div>
+                        <h4 class="text-warning">@String.Format("{0:N0} đ", inv.FinalAmount)</h4>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else if (ViewBag.Phone != null)
+    {
+        <div class="card p-5 text-center text-muted">Không tìm thấy hóa đơn nào.</div>
+    }
+</section>
+
