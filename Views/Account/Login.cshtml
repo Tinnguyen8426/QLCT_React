@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<section class="container" style="padding:24px 0; max-width:400px; margin:0 auto;">
+    <h1 style="margin:0 0 16px; text-align:center;">Đăng nhập</h1>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div style="border:1px solid #f00; color:#b00020; padding:12px; border-radius:8px; margin-bottom:16px;">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@error.ErrorMessage</div>
+            }
+        </div>
+    }
+    <form method="post" asp-action="Login" style="border:1px solid #eee; border-radius:12px; padding:20px;">
+        @Html.AntiForgeryToken()
+        <div style="margin-bottom:12px;">
+            <label>Email</label>
+            <input class="form-control" type="email" name="email" placeholder="Email" required autofocus />
+        </div>
+        <div style="margin-bottom:12px;">
+            <label>Mật khẩu</label>
+            <input class="form-control" type="password" name="password" placeholder="Mật khẩu" required />
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" name="remember" />
+                <span>Ghi nhớ đăng nhập</span>
+            </label>
+        </div>
+        <button class="btn primary" type="submit" style="width:100%;">Đăng nhập</button>
+    </form>
+    <div style="text-align:center; margin-top:16px;">
+        <a href="@Url.Action("Register")">Đăng ký tài khoản</a> | 
+        <a href="@Url.Action("ForgotPassword")">Quên mật khẩu?</a>
+    </div>
+</section>
