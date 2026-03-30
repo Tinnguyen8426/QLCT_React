@@ -1,0 +1,177 @@
+@model QuanLyTiemCatToc.Models.ViewModels.ProductOrderListViewModel
+@using QuanLyTiemCatToc.Helpers
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+@{
+    ViewData["Title"] = "Đơn mỹ phẩm";
+    var statusOptions = (ViewBag.StatusOptions as IEnumerable<string> ?? ProductOrderStatusHelper.All).ToList();
+    var statusTranslations = statusOptions.ToDictionary(s => s, ProductOrderStatusHelper.Translate, StringComparer.OrdinalIgnoreCase);
+    Func<string, string> badgeClass = status => ProductOrderStatusHelper.Normalize(status) switch
+    {
+        ProductOrderStatusHelper.Completed => "badge bg-success",
+        ProductOrderStatusHelper.Shipping => "badge bg-info text-dark",
+        ProductOrderStatusHelper.Packing => "badge bg-primary",
+        ProductOrderStatusHelper.Confirmed => "badge bg-primary",
+        ProductOrderStatusHelper.Cancelled => "badge bg-danger",
+        _ => "badge bg-warning text-dark"
+    };
+}
+
+<div class="appointments-shell text-white">
+    @if (TempData["StatusMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm mb-4">
+            @TempData["StatusMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm mb-4">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <p class="text-uppercase text-white-50 small mb-1">Đơn mỹ phẩm online</p>
+            <h1 class="h3 text-white mb-2">Theo dõi tiến trình giao hàng</h1>
+            <p class="text-white-50 mb-0">Lọc theo trạng thái, tìm kiếm tên khách/ sản phẩm để xử lý nhanh.</p>
+        </div>
+        <a class="btn btn-warning text-dark fw-semibold" href="/Store" target="_blank">
+            <i class="fas fa-store me-2"></i>Xem cửa hàng
+        </a>
+    </div>
+
+    <form method="get" class="filter-toolbar rounded-4 p-3 mb-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-6">
+                <label class="form-label text-white-50 small">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text text-white-50 border-secondary"><i class="fas fa-search"></i></span>
+                    <input type="text" name="searchTerm" value="@Model.Keyword" class="form-control border-secondary" placeholder="Mã đơn, tên khách, SĐT hoặc tên sản phẩm">
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label text-white-50 small">Trạng thái</label>
+                <select id="filter-status" name="status" class="form-select border-secondary text-white status-filter">
+                    <option value="">Tất cả</option>
+                    @foreach (var option in statusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(option, Model.Status, StringComparison.OrdinalIgnoreCase))">@statusTranslations[option]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex align-items-end gap-2">
+                <button class="btn btn-warning text-dark w-100" type="submit"><i class="fas fa-filter me-2"></i>Lọc</button>
+                <a class="btn btn-outline-light" asp-area="Staff" asp-controller="ProductOrders" asp-action="Index"><i class="fas fa-rotate-left"></i></a>
+            </div>
+        </div>
+    </form>
+
+    <div class="status-summary d-flex flex-wrap gap-3 mb-4">
+        @foreach (var kv in Model.StatusCounts)
+        {
+            var label = statusTranslations.TryGetValue(kv.Key, out var translated) ? translated : kv.Key;
+            <a class="status-chip @(string.Equals(kv.Key, Model.Status, StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+               asp-area="Staff" asp-controller="ProductOrders" asp-action="Index" asp-route-status="@kv.Key">
+                <span>@label</span>
+                <strong>@kv.Value</strong>
+            </a>
+        }
+    </div>
+
+    <div class="card border-0 rounded-4 shadow-sm bg-surface">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark-custom table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Sản phẩm</th>
+                            <th>Địa chỉ</th>
+                            <th>Tổng</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-end">Quản lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Orders.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-white-50 py-5">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block text-white-25"></i>
+                                    Không tìm thấy đơn hàng phù hợp với bộ lọc hiện tại.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var order in Model.Orders)
+                            {
+                                var status = ProductOrderStatusHelper.Normalize(order.FulfillmentStatus);
+                                var statusLabel = statusTranslations.TryGetValue(status, out var translated) ? translated : status;
+                                var itemNames = order.InvoiceDetails
+                                    .Where(d => d.Product != null)
+                                    .Select(d => d.Product!.ProductName)
+                                    .Distinct()
+                                    .ToList();
+                                var total = order.FinalAmount ?? order.Total;
+                                <tr>
+                                    <td class="fw-semibold">#@order.InvoiceId</td>
+                                    <td>
+                                        <div class="fw-semibold">@order.Customer?.FullName</div>
+                                        <div class="text-white-50 small">@order.Customer?.Phone</div>
+                                    </td>
+                                    <td>
+                                        <div class="text-white-75">@((itemNames.Any() ? string.Join(", ", itemNames) : "Đang cập nhật"))</div>
+                                        <div class="text-white-50 small mt-1">Số lượng: @order.InvoiceDetails.Sum(d => d.Quantity ?? 0)</div>
+                                    </td>
+                                    <td>
+                                        <div class="text-white-75">@(!string.IsNullOrWhiteSpace(order.ShippingAddress) ? order.ShippingAddress : "Chưa cập nhật")</div>
+                                        <div class="text-white-50 small">@order.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-warning">@string.Format("{0:N0} đ", total)</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="@badgeClass(status)">@statusLabel</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex flex-column align-items-end gap-2">
+                                            <form asp-area="Staff" asp-controller="ProductOrders" asp-action="UpdateStatus" method="post" class="d-flex flex-wrap justify-content-end gap-2">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@order.InvoiceId" />
+                                                <input type="hidden" name="returnSearch" value="@Model.Keyword" />
+                                                <input type="hidden" name="returnStatus" value="@Model.Status" />
+                                                <input type="hidden" name="page" value="@Model.Orders.PageNumber" />
+                                                <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                                    @foreach (var option in statusOptions)
+                                                    {
+                                                        <option value="@option" selected="@(string.Equals(option, status, StringComparison.OrdinalIgnoreCase))">@statusTranslations[option]</option>
+                                                    }
+                                                </select>
+                                                <button class="btn btn-sm btn-outline-light" type="submit">Cập nhật</button>
+                                            </form>
+                                            <div class="btn-group btn-group-sm flex-wrap">
+                                                <a class="btn btn-outline-light" asp-area="Admin" asp-controller="Invoices" asp-action="Details" asp-route-id="@order.InvoiceId" target="_blank">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
+                                                <a class="btn btn-outline-light" href="tel:@order.Customer?.Phone"><i class="fas fa-phone"></i></a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+            @Html.PagedListPager(
+                Model.Orders,
+                page => Url.Action("Index", new { page, searchTerm = Model.Keyword, status = Model.Status }))
+        </div>
+    </div>
+</div>
