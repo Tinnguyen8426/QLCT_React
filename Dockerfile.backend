@@ -1,0 +1,26 @@
+# Stage 1: Build the .NET application
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy csproj and restore dependencies
+COPY ["QuanLyTiemCatToc.csproj", "./"]
+RUN dotnet restore "QuanLyTiemCatToc.csproj"
+
+# Copy the rest of the source code and build
+COPY . .
+WORKDIR "/src/"
+RUN dotnet build "QuanLyTiemCatToc.csproj" -c Release -o /app/build
+
+# Publish the application
+RUN dotnet publish "QuanLyTiemCatToc.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Stage 2: Serve the application using the runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Expose port 5289
+EXPOSE 5289
+
+# Set the entry point
+ENTRYPOINT ["dotnet", "QuanLyTiemCatToc.dll"]

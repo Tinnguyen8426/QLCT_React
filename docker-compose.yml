@@ -1,0 +1,56 @@
+services:
+  # Database Container (SQL Server 2022 on Linux)
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: barber_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$SA_PASSWORD\" -Q \"SELECT 1\" -C -b"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend Container (.NET 8)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: barber_backend
+    environment:
+      - ConnectionStrings__BarberDB=Server=db;Database=QuanLyTiemCatToc;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True
+      - Jwt__Key=${JWT_KEY:-CHANGE_ME_SUPER_SECRET_KEY_32BYTES_LONG}
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5289
+    ports:
+      - "5289:5289"
+    volumes:
+      - uploads_data:/app/wwwroot/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Frontend Container (React + Nginx)
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.frontend
+    container_name: barber_frontend
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5289}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data: # Persist database data across restarts
+  uploads_data:   # Persist uploaded avatar files across restarts
