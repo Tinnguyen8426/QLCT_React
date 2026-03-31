@@ -174,6 +174,12 @@ namespace QuanLyTiemCatToc.Areas.Admin.Controllers
 
                         service.ImageUrl = "/images/services/" + fileName;
                     }
+                    else if (string.IsNullOrEmpty(service.ImageUrl))
+                    {
+                         // Bảo lưu ảnh cũ nếu ImageUrl từ form bị trống
+                         var existing = await _context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.ServiceId == service.ServiceId);
+                         if (existing != null) service.ImageUrl = existing.ImageUrl;
+                    }
 
                     _context.Update(service);
                     await _context.SaveChangesAsync();
