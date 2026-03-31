@@ -162,6 +162,12 @@ namespace QuanLyTiemCatToc.Areas.Admin.Controllers
 
                         product.ImageUrl = "/images/products/" + fileName;
                     }
+                    else if (string.IsNullOrEmpty(product.ImageUrl))
+                    {
+                         // Bảo lưu ảnh cũ nếu ImageUrl bị trống trong model bound
+                         var existing = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == product.ProductId);
+                         if (existing != null) product.ImageUrl = existing.ImageUrl;
+                    }
 
                     product.UpdatedAt = DateTime.Now;
                     _context.Update(product);

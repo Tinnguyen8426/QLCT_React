@@ -23,7 +23,13 @@ export default function RegisterPage() {
 
   const f = (name: string) => ({
     value: (form as any)[name],
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [name]: e.target.value }),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      let val = e.target.value;
+      if (name === 'phone') {
+        val = val.replace(/[^0-9]/g, '').slice(0, 11);
+      }
+      setForm({ ...form, [name]: val });
+    },
     className: `form-control ${errors[name] ? 'is-invalid' : ''}`
   });
 
@@ -48,7 +54,7 @@ export default function RegisterPage() {
           </div>
           <div className="mb-3">
             <label className="form-label small text-secondary">Số điện thoại *</label>
-            <input {...f('phone')} required />
+            <input type="tel" {...f('phone')} placeholder="0123456789" required />
             {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
           </div>
           <div className="mb-3">

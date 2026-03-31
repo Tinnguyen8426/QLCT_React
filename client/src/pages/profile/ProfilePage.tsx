@@ -49,7 +49,15 @@ export default function ProfilePage() {
             </div>
             <div className="mb-3">
               <label className="form-label small text-secondary">Số điện thoại</label>
-              <input className="form-control" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              <input 
+                type="tel"
+                className="form-control" 
+                value={form.phone} 
+                onChange={e => {
+                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+                  setForm({ ...form, phone: val });
+                }} 
+              />
             </div>
             <button className="btn btn-accent" onClick={saveProfile}><i className="fas fa-save me-1"></i>Lưu thay đổi</button>
           </div>

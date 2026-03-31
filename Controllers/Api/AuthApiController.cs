@@ -89,8 +89,16 @@ public class AuthApiController : ControllerBase
         if (hasAdmin && string.IsNullOrWhiteSpace(request.Phone))
             errors["phone"] = "Số điện thoại là bắt buộc.";
 
-        if (!string.IsNullOrWhiteSpace(request.Phone) && await _context.Customers.AnyAsync(c => c.Phone == request.Phone.Trim()))
-            errors["phone"] = "Số điện thoại này đã được sử dụng.";
+        if (!string.IsNullOrWhiteSpace(request.Phone))
+        {
+            var phoneTrim = request.Phone.Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phoneTrim, @"^[0-9]{10,11}$"))
+                errors["phone"] = "Số điện thoại phải là 10 hoặc 11 chữ số.";
+            else if (await _context.Users.AnyAsync(u => u.Phone == phoneTrim))
+                errors["phone"] = "Số điện thoại này đã được sử dụng bởi một tài khoản khác.";
+            else if (await _context.Customers.AnyAsync(c => c.Phone == phoneTrim))
+                errors["phone"] = "Số điện thoại này đã tồn tại trong danh sách khách hàng.";
+        }
 
         if (errors.Count > 0)
             return BadRequest(new { errors });

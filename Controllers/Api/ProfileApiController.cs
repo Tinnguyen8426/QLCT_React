@@ -61,7 +61,12 @@ public class ProfileApiController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.FullName))
             user.FullName = request.FullName.Trim();
         if (request.Phone != null)
-            user.Phone = request.Phone.Trim();
+        {
+            var phoneTrim = request.Phone.Trim();
+            if (!string.IsNullOrWhiteSpace(phoneTrim) && !System.Text.RegularExpressions.Regex.IsMatch(phoneTrim, @"^[0-9]{10,11}$"))
+                return BadRequest(new { message = "Số điện thoại phải là 10 hoặc 11 chữ số." });
+            user.Phone = phoneTrim;
+        }
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Cập nhật thông tin thành công." });
