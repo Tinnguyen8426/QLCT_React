@@ -23,11 +23,14 @@ export default function ImageUpload({ value, onChange, uploadEndpoint = '/api/up
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       onChange(res.data.url || res.data.imageUrl || '');
-    } catch {
-      // Fallback: use local ObjectURL for preview only
-      onChange(URL.createObjectURL(file));
-    } finally {
-      setUploading(false);
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        alert("Phiên đăng nhập đã hết phân quyền (Cookie Auth). Vui lòng đăng nhập lại Admin.");
+      } else {
+        alert("Có lỗi xảy ra khi Upload ảnh lên Server. Bạn gặp sự cố đường truyền mạng nội bộ.");
+      }
+      // KHÔNG CÒN GIAO DIỆN PREVIEW ẢO (BLOB) NÀO NỮA
+    } finally {      setUploading(false);
     }
   };
 
